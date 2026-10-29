@@ -218,10 +218,17 @@
 
 @utility menu-item-icon-active {
   @apply text-brand-500 dark:text-brand-400;
+  filter: brightness(0);
 }
 
 @utility menu-item-icon-inactive {
   @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  filter: brightness(0);
+}
+
+.dark .menu-item-icon-active,
+.dark .menu-item-icon-inactive {
+  filter: none;
 }
 
 @utility menu-item-arrow {
