@@ -7,14 +7,14 @@ import { usePathname } from "next/navigation";
 import { AnimatedDashboardIcon } from "@/shared/components/ui/logo/AnimatedDashboardIcon";
 import { useSidebar } from "../context/SidebarContext";
 import {
-  ChatIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PlugInIcon,
-  UserCircleIcon,
-  UserInlineIcon
+  BotIcon,
+  MedicalHistoryIcon,
+  StaffIcon,
+  SettingIcon,
+  DoctorsIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -35,18 +35,18 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    icon: <UserInlineIcon />,
+    icon: <DoctorsIcon />,
     name: "Doctors",
     path: "/doctors",
   },
   {
     name: "Medical Records",
-    icon: <ListIcon />,
+    icon: <MedicalHistoryIcon />,
     path: "/medical-records",
   },
   {
     name: "AI & Analytics",
-    icon: <ChatIcon />,
+    icon: <BotIcon />,
     subItems: [
       { name: "AI Assistant", path: "/ai-assistant", new: true },
       { name: "Knowledge Base", path: "/knowledge-base" },
@@ -57,12 +57,12 @@ const navItems: NavItem[] = [
 
 const othersItems: NavItem[] = [
   {
-    icon: <UserCircleIcon />,
+    icon: <StaffIcon />,
     name: "Staff",
     path: "/staff",
   },
   {
-    icon: <PlugInIcon />,
+    icon: <SettingIcon />,
     name: "Settings",
     path: "/settings",
   },

@@ -52,9 +52,18 @@ import HorizontaLDots from "./horizontal-dots.svg";
 import ChatIcon from "./chat.svg";
 import MoreDotIcon from "./more-dot.svg";
 import BellIcon from "./bell.svg";
-
+import DoctorsIcon from "./doctors.svg";
+import StaffIcon from "./staff.svg";
+import BotIcon from "./bot.svg";
+import SettingIcon from "./setting.svg";
+import MedicalHistoryIcon from "./medical-history.svg";
 
 export {
+  SettingIcon,
+  BotIcon,
+  MedicalHistoryIcon,
+  StaffIcon,
+  DoctorsIcon,
   DownloadIcon,
   BellIcon,
   MoreDotIcon,
