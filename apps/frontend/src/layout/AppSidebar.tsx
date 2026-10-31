@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-import { AnimatedDashboardIcon } from "@/shared/components/ui/logo/AnimatedDashboardIcon";
 import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
@@ -16,6 +15,8 @@ import {
   SettingIcon,
   DoctorsIcon,
 } from "../icons/index";
+import AnimatedMedicalSymbolIcon from "@/shared/components/ui/logo/AnimatedMedicalSymbolIcon";
+
 
 type NavItem = {
   name: string;
@@ -288,7 +289,7 @@ const AppSidebar: React.FC = () => {
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
-              <AnimatedDashboardIcon size={140} className="ml-12" />
+              <AnimatedMedicalSymbolIcon size={140} ambient={false} className="ml-14"  />
             </>
           ) : (
             <Image

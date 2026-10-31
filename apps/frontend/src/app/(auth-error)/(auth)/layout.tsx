@@ -26,23 +26,54 @@ export default function AuthLayout({
               <GridShape />
               <div className="flex flex-col items-center max-w-xs">
                 <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: 0.3,
-                    type: "spring",
-                    stiffness: 100,
-                    damping: 15,
+                  initial={{
+                    opacity: 0,
+                    scale: 0.6,
+                    rotateX: 40,
+                    filter: "blur(8px)",
                   }}
-                  className="block mb-4"
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    rotateX: 0,
+                    filter: "blur(0px)",
+                  }}
+                  transition={{
+                    delay: 0.25,
+                    type: "spring",
+                    stiffness: 140,
+                    damping: 12,
+                    mass: 0.8,
+                  }}
+                  whileHover={{
+                    scale: 1.06,
+                    filter: "drop-shadow(0 0 12px rgba(54, 66, 201, 0.45))",
+                    transition: { type: "spring", stiffness: 300, damping: 15 },
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  className="mb-4 block"
+                  style={{ perspective: 800, transformStyle: "preserve-3d" }}
                 >
                   <Link href="/">
-                    <Image
-                      width={231}
-                      height={48}
-                      src="./images/logo/auth-logo.svg"
-                      alt="Logo"
-                    />
+                    <motion.div
+                      animate={{
+                        y: [0, -4, 0],
+                      }}
+                      transition={{
+                        duration: 3.2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1.2,
+                      }}
+                    >
+                      <Image
+                        width={231}
+                        height={48}
+                        src="./images/logo/auth-logo.svg"
+                        alt="Logo"
+                        priority
+                      />
+                    </motion.div>
                   </Link>
                 </motion.div>
 
@@ -50,7 +81,7 @@ export default function AuthLayout({
                   text="ShZ Coding"
                   delay={90}
                   repeat={false}
-                  className="text-xl font-bold tracking-tight text-white"
+                  className="text-xl font-bold tracking-tight text-white mr-9"
                 />
               </div>
             </div>

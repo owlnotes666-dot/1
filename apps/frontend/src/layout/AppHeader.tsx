@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
 import { ThemeToggleButton } from "@/shared/components/ui/common/ThemeToggleButton";
-import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
 import UserDropdown from "@/shared/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
 
@@ -113,8 +112,7 @@ const AppHeader: React.FC = () => {
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
 
-            <NotificationDropdown />
-            {/* <!-- Notification Menu Area --> */}
+           
           </div>
           {/* <!-- User Area --> */}
           <UserDropdown />
