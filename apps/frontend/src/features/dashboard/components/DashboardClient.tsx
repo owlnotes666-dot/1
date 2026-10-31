@@ -53,7 +53,7 @@ export default function DashboardClient() {
           </h1>
 
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Welcome back! Here's what's happening at your clinic today.
+            Welcome back! Here&apos;s what&apos;s happening at your clinic today.
           </p>
         </div>
 
