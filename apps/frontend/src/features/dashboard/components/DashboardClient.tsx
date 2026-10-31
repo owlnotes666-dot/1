@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AIInsights,
   EcommerceMetrics,
   MonthlyAppointments,
   useDashboardSales,
@@ -66,6 +67,7 @@ export default function DashboardClient() {
           <TodaySchedule />
         </div>
       </div>
+        <AIInsights />
     </div>
   );
 }

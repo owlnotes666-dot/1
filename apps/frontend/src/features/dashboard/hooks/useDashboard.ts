@@ -57,10 +57,15 @@ export const useTopProducts = () =>
     queryFn: dashboardService.getTopProducts,
   });
 
-
 export const useTodayAppointments = () =>
   useQuery({
     queryKey: ["dashboard", "todayAppointments"],
     queryFn: dashboardService.getTodayAppointments,
   });
 
+export const useOperationsInsights = () =>
+  useQuery({
+    queryKey: ["dashboard", "operationsInsights"],
+    queryFn: dashboardService.getOperationsInsights,
+    staleTime: 60 * 1000,
+  });

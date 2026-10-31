@@ -120,6 +120,93 @@ export const dashboardService = {
 
     return data;
   },
+  async getOperationsInsights() {
+    const supabase = createClient();
+
+    const [appointmentsResult, departmentsResult, pendingReportsResult] =
+      await Promise.all([
+        supabase.schema("medical").from("appointments").select("status"),
+
+        supabase.schema("medical").from("doctors").select(`
+        specialty,
+        appointments (
+          id
+        )
+      `),
+
+        supabase
+          .schema("medical")
+          .from("medical_records")
+          .select(
+            `
+        id,
+        title,
+        created_at,
+        patients (
+          full_name
+        )
+      `,
+          )
+          .eq("status", "Pending")
+          .order("created_at", { ascending: false }),
+      ]);
+
+    const error =
+      appointmentsResult.error ||
+      departmentsResult.error ||
+      pendingReportsResult.error;
+
+    if (error) {
+      console.error("Error fetching clinic insights:", error);
+      throw error;
+    }
+
+    // Appointment status distribution
+    const statusCounts = (appointmentsResult.data ?? []).reduce(
+      (acc, appointment) => {
+        const status = appointment.status || "Unknown";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const appointmentDistribution = Object.entries(statusCounts).map(
+      ([status, count]) => ({
+        status,
+        count,
+      }),
+    );
+
+    // Department activity
+    const departmentActivity = (departmentsResult.data ?? []).map((doctor) => ({
+      specialty: doctor.specialty,
+      appointments: doctor.appointments?.length ?? 0,
+    }));
+
+    // Operational alerts
+    const operationalAlerts = (pendingReportsResult.data ?? []).map(
+      (record) => {
+        const patient = record.patients as unknown as {
+          full_name: string;
+        } | null;
+
+        return {
+          id: record.id,
+          title: record.title,
+          patientName: patient?.full_name ?? "Unknown Patient",
+          createdAt: record.created_at,
+          type: "Pending Medical Report",
+        };
+      },
+    );
+
+    return {
+      appointmentDistribution,
+      departmentActivity,
+      operationalAlerts,
+    };
+  },
 
   async getRevenue(): Promise<RevenueData[]> {
     const supabase = createClient();
