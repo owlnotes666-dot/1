@@ -2,20 +2,14 @@
 
 import {
   EcommerceMetrics,
-  MonthlySalesChart,
-  MonthlyTarget,
-  RecentOrders,
-  StatisticsChart,
+  MonthlyAppointments,
   useDashboardSales,
   useDashboardStats,
-  useDashboardTarget,
 } from "..";
 
-import DemographicCard from "./DemographicCard";
 import Loading from "@/shared/components/errors/LoadingState";
 import { useErrorHandler } from "@/shared/hooks";
-import LatestUsers from "./LatestUsers";
-import TopProducts from "./TopProducts";
+import TodaySchedule from "./TodaySchedule";
 
 export default function DashboardClient() {
   const {
@@ -26,75 +20,51 @@ export default function DashboardClient() {
   } = useDashboardStats();
 
   const {
-    data: sales,
-    isLoading: salesLoading,
-    isError: salesError,
-    error: salesErrorData,
+    data: appointments,
+    isLoading: appointmentsLoading,
+    isError: appointmentsError,
+    error: appointmentsErrorData,
   } = useDashboardSales();
 
-  const {
-    data: target,
-    isLoading: targetLoading,
-    isError: targetError,
-    error: targetErrorData,
-  } = useDashboardTarget();
-
-  useErrorHandler(targetError, targetErrorData);
-
   useErrorHandler(statsError, statsErrorData);
-  useErrorHandler(salesError, salesErrorData);
+  useErrorHandler(appointmentsError, appointmentsErrorData);
 
-  if (statsLoading || salesLoading || statsError || salesError) {
+  if (statsLoading || appointmentsLoading) {
     return <Loading />;
   }
 
-  if (!stats || !sales) {
-    return <Loading />;
-  }
-
-  if (
-    statsLoading ||
-    salesLoading ||
-    targetLoading ||
-    statsError ||
-    salesError ||
-    targetError
-  ) {
-    return <Loading />;
-  }
-
-  if (!stats || !sales || !target) {
+  if (statsError || appointmentsError || !stats || !appointments) {
     return <Loading />;
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6">
-      <div className="col-span-12 space-y-6 xl:col-span-7">
-        <EcommerceMetrics stats={stats} />
-        <MonthlySalesChart sales={sales} />
+    <div className="space-y-6">
+      {/* Page Heading */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Overview
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Monitor your clinic's activity and performance.
+          </p>
+        </div>
       </div>
 
-      <div className="col-span-12 xl:col-span-5">
-        <MonthlyTarget />
-      </div>
+      {/* Statistics */}
+      <EcommerceMetrics stats={stats} />
 
-      <div className="col-span-12">
-        <StatisticsChart />
+      {/* Appointment Analytics */}
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
+        <div className="col-span-12">
+          <MonthlyAppointments sales={appointments} />
+        </div>
       </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
-      </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <LatestUsers />
-      </div>
-      <div className="col-span-12 xl:col-span-5">
-        <TopProducts />
+      {/* Today's Schedule */}
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
+        <div className="col-span-12">
+          <TodaySchedule />
+        </div>
       </div>
     </div>
   );

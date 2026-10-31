@@ -61,7 +61,7 @@ function useIsDarkMode() {
 
 let hasAppointmentsAnimated = false;
 
-export default function MonthlySalesChart({ sales }: Props) {
+export default function MonthlyAppointments({ sales }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const isDark = useIsDarkMode();
   const router = useRouter();

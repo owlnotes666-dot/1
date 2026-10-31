@@ -56,3 +56,11 @@ export const useTopProducts = () =>
     queryKey: queryKeys.dashboard.topProducts,
     queryFn: dashboardService.getTopProducts,
   });
+
+
+export const useTodayAppointments = () =>
+  useQuery({
+    queryKey: ["dashboard", "todayAppointments"],
+    queryFn: dashboardService.getTodayAppointments,
+  });
+

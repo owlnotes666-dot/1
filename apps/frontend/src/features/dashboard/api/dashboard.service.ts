@@ -62,9 +62,12 @@ export const dashboardService = {
     }
 
     const months = Array.from({ length: 12 }, (_, index) => ({
-      month: new Date(new Date().getFullYear(), index, 1).toLocaleString("en-US", {
-        month: "short",
-      }),
+      month: new Date(new Date().getFullYear(), index, 1).toLocaleString(
+        "en-US",
+        {
+          month: "short",
+        },
+      ),
       appointments: 0,
     }));
 
@@ -80,6 +83,42 @@ export const dashboardService = {
       id: String(index + 1),
       ...item,
     }));
+  },
+
+  async getTodayAppointments() {
+    const supabase = createClient();
+
+    const today = new Date().toLocaleDateString("en-CA");
+
+    const { data, error } = await supabase
+      .schema("medical")
+      .from("appointments")
+      .select(
+        `
+  id,
+  appointment_date,
+  appointment_time,
+  status,
+  patients!appointments_patient_id_fkey (
+    full_name
+  ),
+  doctors!appointments_doctor_id_fkey (
+    full_name,
+    specialty
+  )
+`,
+      )
+      .eq("appointment_date", today)
+      .order("appointment_time", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching today's appointments:", error);
+      throw error;
+    }
+
+    console.log("Appointment details:", JSON.stringify(data, null, 2));
+
+    return data;
   },
 
   async getRevenue(): Promise<RevenueData[]> {
