@@ -7,6 +7,15 @@ type Appointment = Awaited<
   ReturnType<typeof dashboardService.getTodayAppointments>
 >[number];
 
+type RelatedPatient = {
+  full_name: string;
+} | null;
+
+type RelatedDoctor = {
+  full_name: string;
+  specialty: string;
+} | null;
+
 function getStatusStyle(status: string) {
   switch (status.toLowerCase()) {
     case "completed":
@@ -64,36 +73,43 @@ export default function TodaySchedule() {
             </thead>
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {data.map((appointment: Appointment) => (
-                <tr
-                  key={appointment.id}
-                  className="transition-colors hover:bg-gray-50/70 dark:hover:bg-gray-800/30"
-                >
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {appointment.appointment_time.slice(0, 5)}
-                  </td>
+              {data.map((appointment: Appointment) => {
+                const patient =
+                  appointment.patients as unknown as RelatedPatient;
 
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    {appointment.patients?.full_name ?? "Unknown Patient"}
-                  </td>
+                const doctor = appointment.doctors as unknown as RelatedDoctor;
 
-                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    {appointment.doctors?.full_name ?? "Unassigned"}
-                  </td>
+                return (
+                  <tr
+                    key={appointment.id}
+                    className="transition-colors hover:bg-gray-50/70 dark:hover:bg-gray-800/30"
+                  >
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      {appointment.appointment_time.slice(0, 5)}
+                    </td>
 
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {appointment.doctors?.specialty ?? "—"}
-                  </td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                      {patient?.full_name ?? "Unknown Patient"}
+                    </td>
 
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusStyle(appointment.status ?? "scheduled")}`}
-                    >
-                      {appointment.status ?? "Scheduled"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                      {doctor?.full_name ?? "Unassigned"}
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      {doctor?.specialty ?? "—"}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusStyle(appointment.status ?? "scheduled")}`}
+                      >
+                        {appointment.status ?? "Scheduled"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
