@@ -11,18 +11,23 @@ import {
   type ChartOptions,
 } from "chart.js";
 import dynamic from "next/dynamic";
-import { useState, useSyncExternalStore, useRef, useMemo } from "react";
+import {
+  useState,
+  useSyncExternalStore,
+  useRef,
+  useMemo,
+  useEffect,
+} from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-
 import { MoreDotIcon } from "@/icons";
 import { DropdownItem } from "@/shared/components/dropdown/DropdownItem";
 import { Dropdown } from "@/shared/components/dropdown/Dropdown";
-import type { SalesData } from "../types";
+import type { AppointmentData } from "../types";
 
 interface Props {
-  sales: SalesData[];
+  sales: AppointmentData[];
 }
 
 ChartJS.register(
@@ -54,7 +59,7 @@ function useIsDarkMode() {
   );
 }
 
-let hasSalesAnimated = false;
+let hasAppointmentsAnimated = false;
 
 export default function MonthlySalesChart({ sales }: Props) {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,22 +69,41 @@ export default function MonthlySalesChart({ sales }: Props) {
   const chartRef = useRef<ChartJS<"bar"> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartWrapperRef = useRef<HTMLDivElement>(null);
-  const isFirstMount = useRef(!hasSalesAnimated);
+  const isFirstMount = useRef(!hasAppointmentsAnimated);
 
-  const targetData = useMemo(() => sales.map((item) => item.sales), [sales]);
+  const targetData = useMemo(
+    () => sales.map((item) => item.appointments),
+    [sales],
+  );
+
   const maxValue = targetData.length ? Math.max(...targetData) : 0;
+
+  
+  const barColors = useMemo(
+    () => (isDark ? ["#465FFF", "#64748B"] : ["#1E3A8A", "#31409E"]),
+    [isDark],
+  );
 
   const [chartData] = useState({
     labels: sales.map((item) => item.month),
     datasets: [
       {
-        label: "Sales",
+        label: "Appointments",
         data: targetData.map(() => 0),
         borderRadius: 8,
-        backgroundColor: ["#465FFF", "#E4E7EC"],
+        backgroundColor: barColors,
       },
     ],
   });
+
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    chart.data.datasets[0].backgroundColor = barColors;
+    chart.update("none");
+  }, [barColors]);
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({
@@ -194,6 +218,7 @@ export default function MonthlySalesChart({ sales }: Props) {
       const safeUpdate = (values: number[]) => {
         if (!chart.canvas || !chart.ctx || !chart.canvas.ownerDocument) return;
         chart.data.datasets[0].data = values;
+        chart.data.datasets[0].backgroundColor = barColors;
         chart.update("none");
       };
 
@@ -202,11 +227,10 @@ export default function MonthlySalesChart({ sales }: Props) {
         return;
       }
 
-      hasSalesAnimated = true;
+      hasAppointmentsAnimated = true;
       isFirstMount.current = false;
 
       const proxy = targetData.map(() => ({ v: 0 }));
-
       safeUpdate(proxy.map((p) => p.v));
 
       tween = gsap.to(proxy, {
@@ -229,7 +253,7 @@ export default function MonthlySalesChart({ sales }: Props) {
       cancelAnimationFrame(rafId);
       tween?.kill();
     };
-  }, [sales, targetData]);
+  }, [sales, targetData, barColors]);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -242,19 +266,20 @@ export default function MonthlySalesChart({ sales }: Props) {
   return (
     <div
       ref={containerRef}
-      className="px-5 pt-5 overflow-hidden bg-white border border-gray-200 opacity-0 rounded-2xl dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 opacity-0 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6"
     >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Monthly Sales
+          Monthly Appointments
         </h3>
 
         <div className="relative inline-block">
           <button onClick={toggleDropdown} className="dropdown-toggle">
-            <span className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+            <span className="text-gray-300 hover:text-gray-700 dark:hover:text-gray-300">
               <MoreDotIcon />
             </span>
           </button>
+
           <Dropdown
             isOpen={isOpen}
             onClose={closeDropdown}
@@ -263,9 +288,9 @@ export default function MonthlySalesChart({ sales }: Props) {
             <DropdownItem
               onItemClick={() => {
                 closeDropdown();
-                router.push("/sales");
+                router.push("/appointments");
               }}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex w-full rounded-lg text-left font-normal text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               View More
             </DropdownItem>
@@ -275,9 +300,9 @@ export default function MonthlySalesChart({ sales }: Props) {
 
       <div
         ref={chartWrapperRef}
-        className="max-w-full overflow-x-auto opacity-0 custom-scrollbar"
+        className="custom-scrollbar max-w-full overflow-x-auto opacity-0"
       >
-        <div className="-ml-5 min-w-162.5 xl:min-w-full pl-2 h-55 mt-4">
+        <div className="-ml-5 mt-4 h-55 min-w-162.5 pl-2 xl:min-w-full">
           <DynamicBarChart ref={chartRef} data={chartData} options={options} />
         </div>
       </div>

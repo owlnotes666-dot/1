@@ -1,73 +1,64 @@
-import { Order } from "@/features/orders";
-import { Product } from "@/features/products";
-import { User } from "@/features/users";
-
-export interface SalesData {
-  id: string;
-  month: string;
-  sales: number;
-}
-
-export interface RevenueData {
-  id: string;
-  month: string;
-  value: number;
-}
-
-export interface VisitorsData {
-  id: string;
-  month: string;
-  visitors: number;
-}
-
-export interface DemographicData {
-  id: string;
-  country: string;
-  customers: number;
-  percentage: number;
-  flag: string;
-}
 export interface DashboardStats {
-  ordergrowth: number;
-  customergrowth: number;
-  users: number;
-  customers: number;
-  orders: number;
-  products: number;
-  revenue: number;
-
-  customerGrowth: number;
-  orderGrowth: number;
-  revenueGrowth: number;
-  productGrowth: number;
-
-  totalUsers?: number;
-  totalOrders?: number;
-  totalProducts?: number;
-
-  latestUsers?: User[];
-  latestOrders?: Order[];
-  topProducts?: Product[];
+  totalPatients: number;
+  patientsGrowth: number;
+  appointmentsToday: number;
+  appointmentsGrowth: number;
+  activeDoctors: number;
+  doctorsGrowth: number;
+  pendingReports: number;
+  reportsGrowth: number;
 }
-export interface DashboardData {
-  stats: DashboardStats;
-  sales: SalesData[];
+
+export interface AppointmentData {
+  id: string;
+  month: string;
+  appointments: number;
+}
+
+export interface PatientData {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  condition: string;
+  status: "Active" | "Discharged" | "Critical";
+  lastVisit: string;
 }
 
 export interface DashboardTarget {
   target: number;
-  revenue: number;
+  completed: number;
   today: number;
   progress: number;
   growth: number;
 }
-export interface TopProduct {
+
+export interface DepartmentData {
   id: string;
-  name: string;
-  image: string;
-  category: string;
-  sold: number;
-  revenue: number;
+  department: string;
+  patients: number;
+  percentage: number;
 }
 
-export type RecentOrder = Order;
+export interface DoctorData {
+  id: string;
+  name: string;
+  specialty: string;
+  patients: number;
+  status: "Available" | "Busy" | "Off Duty";
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  appointments: AppointmentData[];
+}
+
+export interface RecentAppointment {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  department: string;
+  date: string;
+  time: string;
+  status: "Scheduled" | "Completed" | "Cancelled";
+}

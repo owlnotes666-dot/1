@@ -57,8 +57,16 @@ import StaffIcon from "./staff.svg";
 import BotIcon from "./bot.svg";
 import SettingIcon from "./setting.svg";
 import MedicalHistoryIcon from "./medical-history.svg";
+import FileMedical from "./file-medical.svg"
+import ScheduleIcon from "./schedule.svg"
+import DoctorIcon from "./doctor.svg"
+import PatientIcon from "./patient.svg"
 
 export {
+  PatientIcon,
+  DoctorIcon,
+  ScheduleIcon,
+  FileMedical,
   SettingIcon,
   BotIcon,
   MedicalHistoryIcon,

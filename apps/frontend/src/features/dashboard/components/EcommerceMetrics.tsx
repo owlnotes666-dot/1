@@ -1,14 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-
-import { Badge } from "../../../components/ui/shadcn/badge";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  BoxIconLine,
-  GroupIcon,
-} from "@/icons";
+import { DoctorIcon, FileMedical, ScheduleIcon, PatientIcon } from "@/icons";
 import type { DashboardStats } from "../types";
 
 interface Props {
@@ -41,16 +34,28 @@ const itemVariants: Variants = {
 export default function EcommerceMetrics({ stats }: Props) {
   const metrics = [
     {
-      title: "Customers",
-      value: stats.customers,
-      growth: stats.customergrowth,
-      icon: GroupIcon,
+      title: "Total Patients",
+      value: stats.totalPatients ?? 0,
+      growth: stats.patientsGrowth ?? 0,
+      icon: PatientIcon,
     },
     {
-      title: "Orders",
-      value: stats.orders,
-      growth: stats.ordergrowth,
-      icon: BoxIconLine,
+      title: "Appointments Today",
+      value: stats.appointmentsToday ?? 0,
+      growth: stats.appointmentsGrowth ?? 0,
+      icon: ScheduleIcon,
+    },
+    {
+      title: "Active Doctors",
+      value: stats.activeDoctors ?? 0,
+      growth: stats.doctorsGrowth ?? 0,
+      icon: DoctorIcon,
+    },
+    {
+      title: "Pending Reports",
+      value: stats.pendingReports ?? 0,
+      growth: stats.reportsGrowth ?? 0,
+      icon: FileMedical,
     },
   ];
 
@@ -63,41 +68,28 @@ export default function EcommerceMetrics({ stats }: Props) {
     >
       {metrics.map((metric) => {
         const Icon = metric.icon;
-        const isPositive = metric.growth >= 0;
 
         return (
           <motion.div
             key={metric.title}
             variants={itemVariants}
-            className="p-5 bg-white border border-gray-200 rounded-2xl dark:border-gray-800 dark:bg-white/3 md:p-6"
+            className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 md:p-6"
           >
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-              <span className="text-gray-800 dark:text-white/90">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white">
+              <span className="flex items-center justify-center [&_svg]:h-6 [&_svg]:w-6 [&_svg]:fill-current [&_svg]:stroke-current [&_path]:fill-current [&_path]:stroke-current">
                 <Icon />
               </span>
             </div>
 
-            <div className="flex items-end justify-between mt-5">
+            <div className="mt-5 flex items-end justify-between">
               <div>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   {metric.title}
                 </span>
-
-                <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+                <h4 className="text-title-sm mt-2 font-bold text-gray-800 dark:text-white/90">
                   {metric.value.toLocaleString()}
                 </h4>
               </div>
-
-              <Badge
-                className={
-                  isPositive
-                    ? "text-green-700 bg-green-50 dark:bg-green-950 dark:text-green-300"
-                    : "text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-300"
-                }
-              >
-                {isPositive ? <ArrowUpIcon /> : <ArrowDownIcon />}
-                {Math.abs(metric.growth).toFixed(2)}%
-              </Badge>
             </div>
           </motion.div>
         );
