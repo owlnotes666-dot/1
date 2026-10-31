@@ -27,7 +27,7 @@ import { Dropdown } from "@/shared/components/dropdown/Dropdown";
 import type { AppointmentData } from "../types";
 
 interface Props {
-  sales: AppointmentData[];
+  appointments: AppointmentData[];
 }
 
 ChartJS.register(
@@ -61,7 +61,7 @@ function useIsDarkMode() {
 
 let hasAppointmentsAnimated = false;
 
-export default function MonthlyAppointments({ sales }: Props) {
+export default function MonthlyAppointments({ appointments }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const isDark = useIsDarkMode();
   const router = useRouter();
@@ -72,8 +72,8 @@ export default function MonthlyAppointments({ sales }: Props) {
   const isFirstMount = useRef(!hasAppointmentsAnimated);
 
   const targetData = useMemo(
-    () => sales.map((item) => item.appointments),
-    [sales],
+    () => appointments.map((item) => item.appointments),
+    [appointments],
   );
 
   const maxValue = targetData.length ? Math.max(...targetData) : 0;
@@ -85,7 +85,7 @@ export default function MonthlyAppointments({ sales }: Props) {
   );
 
   const [chartData] = useState({
-    labels: sales.map((item) => item.month),
+    labels: appointments.map((item) => item.month),
     datasets: [
       {
         label: "Appointments",
@@ -202,7 +202,7 @@ export default function MonthlyAppointments({ sales }: Props) {
   }, []);
 
   useGSAP(() => {
-    if (!sales.length) return;
+    if (!appointments.length) return;
 
     let rafId: number;
     let tween: gsap.core.Tween | undefined;
@@ -253,7 +253,7 @@ export default function MonthlyAppointments({ sales }: Props) {
       cancelAnimationFrame(rafId);
       tween?.kill();
     };
-  }, [sales, targetData, barColors]);
+  }, [appointments, targetData, barColors]);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
