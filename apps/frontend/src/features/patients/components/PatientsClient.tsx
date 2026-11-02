@@ -86,6 +86,13 @@ export default function PatientsClient() {
     (patient: Patient) => patient.status !== "Active",
   ).length;
 
+  const handleOpenAddModal = () => {
+    if (!isAdmin || isAdminLoading) return;
+
+    setFormError("");
+    setIsAddModalOpen(true);
+  };
+
   const handleAddPatient = async (formData: PatientFormValues) => {
     if (!isAdmin || createPatientMutation.isPending) return;
 
@@ -200,6 +207,8 @@ export default function PatientsClient() {
   );
 
   const handleAddBtnEnter = () => {
+    if (!isAdmin || isAdminLoading) return;
+
     gsap.to(addBtnRef.current, {
       scale: 1.04,
       duration: 0.25,
@@ -214,6 +223,8 @@ export default function PatientsClient() {
       ease: "power2.out",
     });
   };
+
+  const isAddButtonDisabled = !isAdmin || isAdminLoading;
 
   return (
     <div ref={rootRef} className="space-y-6">
@@ -241,20 +252,25 @@ export default function PatientsClient() {
             Manage patient information and medical details.
           </p>
         </div>
-        {!isAdminLoading && isAdmin && (
-          <button
-            ref={addBtnRef}
-            type="button"
-            data-animate="add-btn"
-            onClick={() => setIsAddModalOpen(true)}
-            onMouseEnter={handleAddBtnEnter}
-            onMouseLeave={handleAddBtnLeave}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-          >
-            <span className="text-lg leading-none">+</span>
-            Add Patient
-          </button>
-        )}
+        {/* Add Patient Button - Visible for all roles, enabled only for Admin */}
+        <button
+          ref={addBtnRef}
+          type="button"
+          data-animate="add-btn"
+          onClick={handleOpenAddModal}
+          onMouseEnter={handleAddBtnEnter}
+          onMouseLeave={handleAddBtnLeave}
+          disabled={isAddButtonDisabled}
+          title={
+            isAddButtonDisabled
+              ? "Only administrators can add patients."
+              : "Add a new patient"
+          }
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-teal-600"
+        >
+          <span className="text-lg leading-none">+</span>
+          Add Patient
+        </button>
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -289,6 +305,7 @@ export default function PatientsClient() {
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
               All Patients
             </h2>
+
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Patient directory and information
             </p>
@@ -391,6 +408,7 @@ export default function PatientsClient() {
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {patient.full_name}
                           </p>
+
                           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                             {patient.email || "No email provided"}
                           </p>
@@ -402,6 +420,7 @@ export default function PatientsClient() {
                       <p className="text-sm text-gray-700 dark:text-gray-300">
                         {patient.age ?? "—"} years
                       </p>
+
                       <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                         {patient.gender || "Not specified"}
                       </p>
@@ -432,6 +451,7 @@ export default function PatientsClient() {
                               : "bg-gray-400"
                           }`}
                         />
+
                         {patient.status}
                       </span>
                     </td>
@@ -495,12 +515,14 @@ export default function PatientsClient() {
               >
                 Full Name <span className="text-red-500">*</span>
               </label>
+
               <input
                 id="full_name"
                 {...register("full_name")}
                 placeholder="Enter patient's full name"
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
               />
+
               {validationErrors.full_name && (
                 <p className="mt-1 text-xs text-red-500">
                   {validationErrors.full_name.message}
@@ -516,6 +538,7 @@ export default function PatientsClient() {
                 >
                   Age
                 </label>
+
                 <input
                   id="age"
                   type="number"
@@ -524,6 +547,7 @@ export default function PatientsClient() {
                   placeholder="Enter age"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+
                 {validationErrors.age && (
                   <p className="mt-1 text-xs text-red-500">
                     {validationErrors.age.message}
@@ -538,6 +562,7 @@ export default function PatientsClient() {
                 >
                   Gender
                 </label>
+
                 <select
                   id="gender"
                   {...register("gender")}
@@ -548,6 +573,7 @@ export default function PatientsClient() {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+
                 {validationErrors.gender && (
                   <p className="mt-1 text-xs text-red-500">
                     {validationErrors.gender.message}
@@ -564,6 +590,7 @@ export default function PatientsClient() {
                 >
                   Phone
                 </label>
+
                 <input
                   id="phone"
                   type="tel"
@@ -571,6 +598,7 @@ export default function PatientsClient() {
                   placeholder="Enter phone number"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+
                 {validationErrors.phone && (
                   <p className="mt-1 text-xs text-red-500">
                     {validationErrors.phone.message}
@@ -585,6 +613,7 @@ export default function PatientsClient() {
                 >
                   Email
                 </label>
+
                 <input
                   id="email"
                   type="email"
@@ -592,6 +621,7 @@ export default function PatientsClient() {
                   placeholder="Enter email address"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+
                 {validationErrors.email && (
                   <p className="mt-1 text-xs text-red-500">
                     {validationErrors.email.message}
@@ -607,12 +637,14 @@ export default function PatientsClient() {
               >
                 Medical Condition
               </label>
+
               <input
                 id="condition"
                 {...register("condition")}
                 placeholder="Enter medical condition"
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
               />
+
               {validationErrors.condition && (
                 <p className="mt-1 text-xs text-red-500">
                   {validationErrors.condition.message}
@@ -627,6 +659,7 @@ export default function PatientsClient() {
               >
                 Patient Status
               </label>
+
               <select
                 id="status"
                 {...register("status")}
@@ -635,6 +668,7 @@ export default function PatientsClient() {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
+
               {validationErrors.status && (
                 <p className="mt-1 text-xs text-red-500">
                   {validationErrors.status.message}
@@ -711,6 +745,7 @@ function SummaryCard({ title, value, icon, accent }: SummaryCardProps) {
 
   const handleMouseLeave = () => {
     gsap.to(cardRef.current, { y: 0, duration: 0.35, ease: "power3.out" });
+
     gsap.to(iconRef.current, {
       rotate: 0,
       scale: 1,
