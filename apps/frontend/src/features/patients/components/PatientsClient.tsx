@@ -11,6 +11,7 @@ import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
 import { useErrorHandler } from "@/shared/hooks";
 import Modal from "@/shared/components/ui/common/Modal";
+import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 
 import { usePatients } from "../hooks/usePatients";
 import { useCreatePatient } from "../hooks/useCreatePatient";
@@ -25,6 +26,8 @@ export default function PatientsClient() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const { data: isAdmin = false, isLoading: isAdminLoading } = useIsAdmin();
 
   const {
     data: patients = [],
@@ -84,6 +87,8 @@ export default function PatientsClient() {
   ).length;
 
   const handleAddPatient = async (formData: PatientFormValues) => {
+    if (!isAdmin || createPatientMutation.isPending) return;
+
     setFormError("");
 
     const age = formData.age ? Number(formData.age) : null;
@@ -100,15 +105,37 @@ export default function PatientsClient() {
       });
 
       reset();
+      clearErrors();
       setIsAddModalOpen(false);
-    } catch (insertError) {
-      console.error("Add patient error:", insertError);
+    } catch (insertError: unknown) {
+      const error = insertError as {
+        message?: string;
+        code?: string;
+        details?: string;
+        hint?: string;
+      };
+
+      console.error("Add patient error details:", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        rawError: insertError,
+      });
+
       setFormError(
-        insertError instanceof Error
-          ? insertError.message
-          : "Unable to add patient.",
+        error?.message || "Unable to add patient. Please try again.",
       );
     }
+  };
+
+  const closeAddModal = () => {
+    if (createPatientMutation.isPending) return;
+
+    setIsAddModalOpen(false);
+    setFormError("");
+    reset();
+    clearErrors();
   };
 
   /* ------------------------------ Animations ------------------------------ */
@@ -157,6 +184,7 @@ export default function PatientsClient() {
       const rows = rootRef.current?.querySelectorAll<HTMLElement>(
         "[data-animate='row']",
       );
+
       if (!rows || rows.length === 0) return;
 
       gsap.from(rows, {
@@ -189,23 +217,23 @@ export default function PatientsClient() {
 
   return (
     <div ref={rootRef} className="space-y-6">
-      {/* Page Header */}
+      {/* Page Header */}{" "}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {" "}
         <div>
+          {" "}
           <p
             data-animate="header-item"
             className="text-sm font-medium text-teal-600 dark:text-teal-400"
           >
-            CLINIC MANAGEMENT
+            CLINIC MANAGEMENT{" "}
           </p>
-
           <h1
             data-animate="header-item"
             className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
           >
             Patients
           </h1>
-
           <p
             data-animate="header-item"
             className="mt-2 text-sm text-gray-500 dark:text-gray-400"
@@ -213,21 +241,21 @@ export default function PatientsClient() {
             Manage patient information and medical details.
           </p>
         </div>
-
-        <button
-          ref={addBtnRef}
-          type="button"
-          data-animate="add-btn"
-          onClick={() => setIsAddModalOpen(true)}
-          onMouseEnter={handleAddBtnEnter}
-          onMouseLeave={handleAddBtnLeave}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-        >
-          <span className="text-lg leading-none">+</span>
-          Add Patient
-        </button>
+        {!isAdminLoading && isAdmin && (
+          <button
+            ref={addBtnRef}
+            type="button"
+            data-animate="add-btn"
+            onClick={() => setIsAddModalOpen(true)}
+            onMouseEnter={handleAddBtnEnter}
+            onMouseLeave={handleAddBtnLeave}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+          >
+            <span className="text-lg leading-none">+</span>
+            Add Patient
+          </button>
+        )}
       </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard
@@ -251,7 +279,6 @@ export default function PatientsClient() {
           accent="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
         />
       </div>
-
       {/* Patients Table */}
       <div
         data-animate="table"
@@ -441,84 +468,64 @@ export default function PatientsClient() {
             </p>
           </div>
         )}
-
+      </div>
+      {/* Add Patient Modal - Admin Only */}
+      {isAdmin && (
         <Modal
           isOpen={isAddModalOpen}
-          onClose={() => {
-            if (!createPatientMutation.isPending) {
-              setIsAddModalOpen(false);
-              setFormError("");
-              clearErrors();
-            }
-          }}
+          onClose={closeAddModal}
           title="Add New Patient"
           description="Enter the patient's information to create a new record."
           maxWidth="max-w-2xl"
         >
-          <form
-            noValidate
-            onSubmit={handleSubmit(handleAddPatient)}
-            className="space-y-5"
-          >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="patient-full-name"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-
-                <input
-                  id="patient-full-name"
-                  type="text"
-                  aria-invalid={Boolean(validationErrors.full_name)}
-                  aria-describedby={
-                    validationErrors.full_name
-                      ? "patient-full-name-error"
-                      : undefined
-                  }
-                  {...register("full_name")}
-                  placeholder="Enter full name"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                />
-                {validationErrors.full_name && (
-                  <p
-                    id="patient-full-name-error"
-                    className="mt-1 text-xs text-red-600 dark:text-red-400"
-                  >
-                    {validationErrors.full_name.message}
-                  </p>
-                )}
+          <form onSubmit={handleSubmit(handleAddPatient)} className="space-y-5">
+            {formError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+              >
+                {formError}
               </div>
+            )}
 
+            <div>
+              <label
+                htmlFor="full_name"
+                className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="full_name"
+                {...register("full_name")}
+                placeholder="Enter patient's full name"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+              />
+              {validationErrors.full_name && (
+                <p className="mt-1 text-xs text-red-500">
+                  {validationErrors.full_name.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
-                  htmlFor="patient-age"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  htmlFor="age"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Age
                 </label>
-
                 <input
-                  id="patient-age"
+                  id="age"
                   type="number"
                   min="0"
-                  max="150"
-                  step="1"
-                  aria-invalid={Boolean(validationErrors.age)}
-                  aria-describedby={
-                    validationErrors.age ? "patient-age-error" : undefined
-                  }
                   {...register("age")}
                   placeholder="Enter age"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
                 {validationErrors.age && (
-                  <p
-                    id="patient-age-error"
-                    className="mt-1 text-xs text-red-600 dark:text-red-400"
-                  >
+                  <p className="mt-1 text-xs text-red-500">
                     {validationErrors.age.message}
                   </p>
                 )}
@@ -526,49 +533,46 @@ export default function PatientsClient() {
 
               <div>
                 <label
-                  htmlFor="patient-gender"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  htmlFor="gender"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Gender
                 </label>
-
                 <select
-                  id="patient-gender"
-                  aria-invalid={Boolean(validationErrors.gender)}
+                  id="gender"
                   {...register("gender")}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                {validationErrors.gender && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {validationErrors.gender.message}
+                  </p>
+                )}
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
-                  htmlFor="patient-phone"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  htmlFor="phone"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Phone
                 </label>
-
                 <input
-                  id="patient-phone"
+                  id="phone"
                   type="tel"
-                  aria-invalid={Boolean(validationErrors.phone)}
-                  aria-describedby={
-                    validationErrors.phone ? "patient-phone-error" : undefined
-                  }
                   {...register("phone")}
                   placeholder="Enter phone number"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
                 {validationErrors.phone && (
-                  <p
-                    id="patient-phone-error"
-                    className="mt-1 text-xs text-red-600 dark:text-red-400"
-                  >
+                  <p className="mt-1 text-xs text-red-500">
                     {validationErrors.phone.message}
                   </p>
                 )}
@@ -576,100 +580,74 @@ export default function PatientsClient() {
 
               <div>
                 <label
-                  htmlFor="patient-email"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  htmlFor="email"
+                  className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Email
                 </label>
-
                 <input
-                  id="patient-email"
+                  id="email"
                   type="email"
-                  aria-invalid={Boolean(validationErrors.email)}
-                  aria-describedby={
-                    validationErrors.email ? "patient-email-error" : undefined
-                  }
                   {...register("email")}
-                  placeholder="patient@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  placeholder="Enter email address"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
                 {validationErrors.email && (
-                  <p
-                    id="patient-email-error"
-                    className="mt-1 text-xs text-red-600 dark:text-red-400"
-                  >
+                  <p className="mt-1 text-xs text-red-500">
                     {validationErrors.email.message}
                   </p>
                 )}
               </div>
-
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="patient-condition"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Medical Condition
-                </label>
-
-                <input
-                  id="patient-condition"
-                  type="text"
-                  aria-invalid={Boolean(validationErrors.condition)}
-                  aria-describedby={
-                    validationErrors.condition
-                      ? "patient-condition-error"
-                      : undefined
-                  }
-                  {...register("condition")}
-                  placeholder="Enter medical condition"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                />
-                {validationErrors.condition && (
-                  <p
-                    id="patient-condition-error"
-                    className="mt-1 text-xs text-red-600 dark:text-red-400"
-                  >
-                    {validationErrors.condition.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="patient-status"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Status
-                </label>
-
-                <select
-                  id="patient-status"
-                  aria-invalid={Boolean(validationErrors.status)}
-                  {...register("status")}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
             </div>
 
-            {formError && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-400">
-                {formError}
-              </div>
-            )}
+            <div>
+              <label
+                htmlFor="condition"
+                className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Medical Condition
+              </label>
+              <input
+                id="condition"
+                {...register("condition")}
+                placeholder="Enter medical condition"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+              />
+              {validationErrors.condition && (
+                <p className="mt-1 text-xs text-red-500">
+                  {validationErrors.condition.message}
+                </p>
+              )}
+            </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
+            <div>
+              <label
+                htmlFor="status"
+                className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Patient Status
+              </label>
+              <select
+                id="status"
+                {...register("status")}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              {validationErrors.status && (
+                <p className="mt-1 text-xs text-red-500">
+                  {validationErrors.status.message}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
               <button
                 type="button"
+                onClick={closeAddModal}
                 disabled={createPatientMutation.isPending}
-                onClick={() => {
-                  setIsAddModalOpen(false);
-                  setFormError("");
-                  clearErrors();
-                }}
-                className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Cancel
               </button>
@@ -677,14 +655,14 @@ export default function PatientsClient() {
               <button
                 type="submit"
                 disabled={createPatientMutation.isPending}
-                className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {createPatientMutation.isPending ? "Saving..." : "Add Patient"}
               </button>
             </div>
           </form>
         </Modal>
-      </div>
+      )}
     </div>
   );
 }
@@ -699,7 +677,6 @@ interface SummaryCardProps {
 function SummaryCard({ title, value, icon, accent }: SummaryCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
-  const numberRef = useRef<HTMLParagraphElement>(null);
   const [displayedValue, setDisplayedValue] = useState(0);
 
   useGSAP(
@@ -750,11 +727,12 @@ function SummaryCard({ title, value, icon, accent }: SummaryCardProps) {
       onMouseLeave={handleMouseLeave}
       className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
     >
+      {" "}
       <div className="flex items-center justify-between">
+        {" "}
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-          {title}
+          {title}{" "}
         </p>
-
         <div
           ref={iconRef}
           className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg font-bold ${accent}`}
@@ -762,11 +740,7 @@ function SummaryCard({ title, value, icon, accent }: SummaryCardProps) {
           {icon}
         </div>
       </div>
-
-      <p
-        ref={numberRef}
-        className="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
-      >
+      <p className="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
         {Math.round(displayedValue).toLocaleString()}
       </p>
     </div>

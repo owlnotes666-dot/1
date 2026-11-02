@@ -1,20 +1,11 @@
 import { Metadata } from "next";
-
-import PageBreadcrumb from "@/shared/components/ui/common/PageBreadCrumb";
-import Calendar from "./components/Calendar";
-
+import AppointmentsClient from "@/features/appointments/components/AppointmentsClient";
 
 export const metadata: Metadata = {
-  title: "Appointments | Medical Dashboard",
-  description:
-    "Appointments",
-  // other metadata
+title: "Appointments | Medical Dashboard",
+description: "Manage medical appointments",
 };
-export default function page() {
-  return (
-    <div>
-      <PageBreadcrumb pageTitle="Appointments" />
-      <Calendar />
-    </div>
-  );
+
+export default function Appointments() {
+return <AppointmentsClient />;
 }
