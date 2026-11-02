@@ -9,8 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
 import { useErrorHandler } from "@/shared/hooks";
-
-gsap.registerPlugin(useGSAP);
+import Modal from "@/shared/components/ui/common/Modal";
 
 interface Patient {
   id: string;
@@ -32,6 +31,19 @@ export default function PatientsClient() {
   const [error, setError] = useState<unknown>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const [formData, setFormData] = useState({
+    full_name: "",
+    age: "",
+    gender: "",
+    phone: "",
+    email: "",
+    condition: "",
+    status: "Active",
+  });
 
   const rootRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
@@ -85,6 +97,63 @@ export default function PatientsClient() {
   const inactiveCount = patients.filter(
     (patient) => patient.status !== "Active",
   ).length;
+
+  const handleAddPatient = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setFormError("");
+
+    if (!formData.full_name.trim()) {
+      setFormError("Please enter the patient's full name.");
+      return;
+    }
+
+    const age = formData.age ? Number(formData.age) : null;
+
+    if (age !== null && (!Number.isInteger(age) || age < 0 || age > 150)) {
+      setFormError("Please enter a valid age.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const { data, error: insertError } = await supabase
+      .schema("medical")
+      .from("patients")
+      .insert({
+        full_name: formData.full_name.trim(),
+        age,
+        gender: formData.gender || null,
+        phone: formData.phone.trim() || null,
+        email: formData.email.trim() || null,
+        condition: formData.condition.trim() || null,
+        status: formData.status,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Add patient error:", insertError);
+      setFormError(insertError.message || "Unable to add patient.");
+      setIsSaving(false);
+      return;
+    }
+
+    setPatients((current) => [data as Patient, ...current]);
+
+    setFormData({
+      full_name: "",
+      age: "",
+      gender: "",
+      phone: "",
+      email: "",
+      condition: "",
+      status: "Active",
+    });
+
+    setIsSaving(false);
+    setIsAddModalOpen(false);
+  };
 
   /* ------------------------------ Animations ------------------------------ */
 
@@ -195,6 +264,7 @@ export default function PatientsClient() {
           ref={addBtnRef}
           type="button"
           data-animate="add-btn"
+          onClick={() => setIsAddModalOpen(true)}
           onMouseEnter={handleAddBtnEnter}
           onMouseLeave={handleAddBtnLeave}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
@@ -428,6 +498,178 @@ export default function PatientsClient() {
             </p>
           </div>
         )}
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => {
+            if (!isSaving) {
+              setIsAddModalOpen(false);
+              setFormError("");
+            }
+          }}
+          title="Add New Patient"
+          description="Enter the patient's information to create a new record."
+          maxWidth="max-w-2xl"
+        >
+          <form onSubmit={handleAddPatient} className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Full Name */}
+              <div className="sm:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+
+                <input
+                  type="text"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, full_name: e.target.value })
+                  }
+                  placeholder="Enter full name"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              {/* Age */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Age
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  max="150"
+                  value={formData.age}
+                  onChange={(e) =>
+                    setFormData({ ...formData, age: e.target.value })
+                  }
+                  placeholder="Enter age"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Gender
+                </label>
+
+                <select
+                  value={formData.gender}
+                  onChange={(e) =>
+                    setFormData({ ...formData, gender: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Phone
+                </label>
+
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="Enter phone number"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="patient@example.com"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              {/* Medical Condition */}
+              <div className="sm:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Medical Condition
+                </label>
+
+                <input
+                  type="text"
+                  value={formData.condition}
+                  onChange={(e) =>
+                    setFormData({ ...formData, condition: e.target.value })
+                  }
+                  placeholder="Enter medical condition"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              {/* Status */}
+              <div className="sm:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Status
+                </label>
+
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {formError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-400">
+                {formError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setFormError("");
+                }}
+                className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? "Saving..." : "Add Patient"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </div>
   );
