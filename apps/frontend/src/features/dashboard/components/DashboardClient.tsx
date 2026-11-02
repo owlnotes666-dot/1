@@ -3,9 +3,9 @@
 import { motion, type Variants } from "framer-motion";
 import {
   AIInsights,
-  EcommerceMetrics,
+  MedicalMetrics,
   MonthlyAppointments,
-  useDashboardSales,
+  useAppointments,
   useDashboardStats,
 } from "..";
 import Loading from "@/shared/components/errors/LoadingState";
@@ -63,7 +63,7 @@ export default function DashboardClient() {
     isLoading: appointmentsLoading,
     isError: appointmentsError,
     error: appointmentsErrorData,
-  } = useDashboardSales();
+  } = useAppointments();
 
   useErrorHandler(statsError, statsErrorData);
   useErrorHandler(appointmentsError, appointmentsErrorData);
@@ -108,7 +108,6 @@ export default function DashboardClient() {
             today.
           </motion.p>
 
-         
           <motion.div variants={fadeUp} className="mt-4 flex flex-wrap gap-3">
             <motion.a
               href="/patients"
@@ -130,7 +129,6 @@ export default function DashboardClient() {
           </motion.div>
         </div>
 
-       
         <motion.div
           variants={fadeLeft}
           whileHover={{ scale: 1.02 }}
@@ -161,7 +159,7 @@ export default function DashboardClient() {
       </motion.div>
 
       {/* Statistics */}
-      <EcommerceMetrics stats={stats} />
+      <MedicalMetrics stats={stats} />
 
       {/* Appointment Analytics */}
       <div className="grid grid-cols-12 gap-4 md:gap-6">

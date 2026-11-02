@@ -9,63 +9,21 @@ export const useDashboardStats = () =>
     queryFn: dashboardService.getStats,
   });
 
-export const useDashboardSales = () =>
+export const useAppointments = () =>
   useQuery({
-    queryKey: queryKeys.dashboard.sales,
-    queryFn: dashboardService.getSales,
-  });
-
-export const useDashboardRevenue = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.revenue,
-    queryFn: dashboardService.getRevenue,
-  });
-
-export const useDashboardTarget = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.target,
-    queryFn: dashboardService.getTarget,
-  });
-
-export const useDashboardVisitors = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.visitors,
-    queryFn: dashboardService.getVisitors,
-  });
-
-export const useDashboardDemographics = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.demographics,
-    queryFn: dashboardService.getDemographics,
-  });
-
-export const useRecentOrders = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.recentOrders,
-    queryFn: dashboardService.getRecentOrders,
-  });
-
-export const useLatestUsers = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.latestUsers,
-    queryFn: dashboardService.getLatestUsers,
-  });
-
-export const useTopProducts = () =>
-  useQuery({
-    queryKey: queryKeys.dashboard.topProducts,
-    queryFn: dashboardService.getTopProducts,
+    queryKey: queryKeys.dashboard.appointments,
+    queryFn: dashboardService.appointments,
   });
 
 export const useTodayAppointments = () =>
   useQuery({
-    queryKey: ["dashboard", "todayAppointments"],
+    queryKey: queryKeys.dashboard.todayAppointments,
     queryFn: dashboardService.getTodayAppointments,
   });
 
 export const useOperationsInsights = () =>
   useQuery({
-    queryKey: ["dashboard", "operationsInsights"],
+    queryKey: queryKeys.dashboard.operationsInsights,
     queryFn: dashboardService.getOperationsInsights,
     staleTime: 60 * 1000,
   });

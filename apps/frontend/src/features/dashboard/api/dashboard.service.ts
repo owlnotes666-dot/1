@@ -1,197 +1,184 @@
-import type {
-  DashboardStats,
-  DashboardTarget,
-  AppointmentData,
-  RevenueData,
-  VisitorsData,
-  DemographicData,
-  RecentOrder,
-  TopProduct,
-} from "../types";
-import { User } from "@/features/users";
+import type { DashboardStats, AppointmentData } from "../types";
 import { createClient } from "@/lib/supabase/client";
 
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
-  const supabase = createClient();
-  const now = new Date();
+    const supabase = createClient();
+    const now = new Date();
 
-  const today = now.toLocaleDateString("en-CA");
+    const today = now.toLocaleDateString("en-CA");
 
-  const sameDayLastWeek = new Date(now);
-  sameDayLastWeek.setDate(now.getDate() - 7);
-  const previousWeekDate = sameDayLastWeek.toLocaleDateString("en-CA");
+    const sameDayLastWeek = new Date(now);
+    sameDayLastWeek.setDate(now.getDate() - 7);
+    const previousWeekDate = sameDayLastWeek.toLocaleDateString("en-CA");
 
-  const currentMonthStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1,
-  ).toISOString();
+    const currentMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+    ).toISOString();
 
-  const nextMonthStart = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    1,
-  ).toISOString();
+    const nextMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+    ).toISOString();
 
-  const previousMonthStart = new Date(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1,
-  ).toISOString();
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    ).toISOString();
 
-  const formatMonth = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
+    const formatMonth = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 
-  const currentSnapshotMonth = formatMonth(now);
+    const currentSnapshotMonth = formatMonth(now);
 
-  const previousSnapshotDate = new Date(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1,
-  );
+    const previousSnapshotDate = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
 
-  const previousSnapshotMonth = formatMonth(previousSnapshotDate);
+    const previousSnapshotMonth = formatMonth(previousSnapshotDate);
 
-  const calculateGrowth = (current: number, previous: number) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
+    const calculateGrowth = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
 
-    return Math.round(((current - previous) / previous) * 100);
-  };
+      return Math.round(((current - previous) / previous) * 100);
+    };
 
-  const [
-    patientsResult,
-    currentMonthPatients,
-    previousMonthPatients,
-    todayAppointments,
-    previousWeekAppointments,
-    doctorsResult,
-    reportsResult,
-    currentSnapshotResult,
-    previousSnapshotResult,
-  ] = await Promise.all([
-    supabase
-      .schema("medical")
-      .from("patients")
-      .select("id", { count: "exact", head: true }),
+    const [
+      patientsResult,
+      currentMonthPatients,
+      previousMonthPatients,
+      todayAppointments,
+      previousWeekAppointments,
+      doctorsResult,
+      reportsResult,
+      currentSnapshotResult,
+      previousSnapshotResult,
+    ] = await Promise.all([
+      supabase
+        .schema("medical")
+        .from("patients")
+        .select("id", { count: "exact", head: true }),
 
-    supabase
-      .schema("medical")
-      .from("patients")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", currentMonthStart)
-      .lt("created_at", nextMonthStart),
+      supabase
+        .schema("medical")
+        .from("patients")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", currentMonthStart)
+        .lt("created_at", nextMonthStart),
 
-    supabase
-      .schema("medical")
-      .from("patients")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", previousMonthStart)
-      .lt("created_at", currentMonthStart),
+      supabase
+        .schema("medical")
+        .from("patients")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", previousMonthStart)
+        .lt("created_at", currentMonthStart),
 
-    supabase
-      .schema("medical")
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("appointment_date", today),
+      supabase
+        .schema("medical")
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("appointment_date", today),
 
-    supabase
-      .schema("medical")
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("appointment_date", previousWeekDate),
+      supabase
+        .schema("medical")
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("appointment_date", previousWeekDate),
 
-    supabase
-      .schema("medical")
-      .from("doctors")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "Active"),
+      supabase
+        .schema("medical")
+        .from("doctors")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "Active"),
 
-    supabase
-      .schema("medical")
-      .from("medical_records")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "Pending"),
+      supabase
+        .schema("medical")
+        .from("medical_records")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "Pending"),
 
-    supabase
-      .schema("medical")
-      .from("monthly_snapshots")
-      .select("active_doctors, pending_reports")
-      .eq("snapshot_month", currentSnapshotMonth)
-      .maybeSingle(),
+      supabase
+        .schema("medical")
+        .from("monthly_snapshots")
+        .select("active_doctors, pending_reports")
+        .eq("snapshot_month", currentSnapshotMonth)
+        .maybeSingle(),
 
-    supabase
-      .schema("medical")
-      .from("monthly_snapshots")
-      .select("active_doctors, pending_reports")
-      .eq("snapshot_month", previousSnapshotMonth)
-      .maybeSingle(),
-  ]);
+      supabase
+        .schema("medical")
+        .from("monthly_snapshots")
+        .select("active_doctors, pending_reports")
+        .eq("snapshot_month", previousSnapshotMonth)
+        .maybeSingle(),
+    ]);
 
-  const error =
-    patientsResult.error ||
-    currentMonthPatients.error ||
-    previousMonthPatients.error ||
-    todayAppointments.error ||
-    previousWeekAppointments.error ||
-    doctorsResult.error ||
-    reportsResult.error ||
-    currentSnapshotResult.error ||
-    previousSnapshotResult.error;
+    const error =
+      patientsResult.error ||
+      currentMonthPatients.error ||
+      previousMonthPatients.error ||
+      todayAppointments.error ||
+      previousWeekAppointments.error ||
+      doctorsResult.error ||
+      reportsResult.error ||
+      currentSnapshotResult.error ||
+      previousSnapshotResult.error;
 
-  if (error) {
-    console.error("Error fetching dashboard stats:", error);
-    throw error;
-  }
+    if (error) {
+      console.error("Error fetching dashboard stats:", error);
+      throw error;
+    }
 
-  const currentPatients = currentMonthPatients.count ?? 0;
-  const previousPatients = previousMonthPatients.count ?? 0;
+    const currentPatients = currentMonthPatients.count ?? 0;
+    const previousPatients = previousMonthPatients.count ?? 0;
 
-  const currentAppointments = todayAppointments.count ?? 0;
-  const previousAppointments = previousWeekAppointments.count ?? 0;
+    const currentAppointments = todayAppointments.count ?? 0;
+    const previousAppointments = previousWeekAppointments.count ?? 0;
 
-  const currentSnapshot = currentSnapshotResult.data;
-  const previousSnapshot = previousSnapshotResult.data;
+    const currentSnapshot = currentSnapshotResult.data;
+    const previousSnapshot = previousSnapshotResult.data;
 
-  const hasSnapshotComparison =
-    currentSnapshot !== null && previousSnapshot !== null;
+    const hasSnapshotComparison =
+      currentSnapshot !== null && previousSnapshot !== null;
 
-  return {
-    totalPatients: patientsResult.count ?? 0,
+    return {
+      totalPatients: patientsResult.count ?? 0,
 
-    patientsGrowth: calculateGrowth(
-      currentPatients,
-      previousPatients,
-    ),
+      patientsGrowth: calculateGrowth(currentPatients, previousPatients),
 
-    appointmentsToday: currentAppointments,
+      appointmentsToday: currentAppointments,
 
-    appointmentsGrowth: calculateGrowth(
-      currentAppointments,
-      previousAppointments,
-    ),
+      appointmentsGrowth: calculateGrowth(
+        currentAppointments,
+        previousAppointments,
+      ),
 
-    activeDoctors: doctorsResult.count ?? 0,
+      activeDoctors: doctorsResult.count ?? 0,
 
-    doctorsGrowth: hasSnapshotComparison
-      ? calculateGrowth(
-          currentSnapshot.active_doctors,
-          previousSnapshot.active_doctors,
-        )
-      : 0,
+      doctorsGrowth: hasSnapshotComparison
+        ? calculateGrowth(
+            currentSnapshot.active_doctors,
+            previousSnapshot.active_doctors,
+          )
+        : 0,
 
-    pendingReports: reportsResult.count ?? 0,
+      pendingReports: reportsResult.count ?? 0,
 
-    reportsGrowth: hasSnapshotComparison
-      ? calculateGrowth(
-          currentSnapshot.pending_reports,
-          previousSnapshot.pending_reports,
-        )
-      : 0,
-  };
-},
+      reportsGrowth: hasSnapshotComparison
+        ? calculateGrowth(
+            currentSnapshot.pending_reports,
+            previousSnapshot.pending_reports,
+          )
+        : 0,
+    };
+  },
 
-  async getSales(): Promise<AppointmentData[]> {
+  async appointments(): Promise<AppointmentData[]> {
     const supabase = createClient();
 
     const startDate = new Date(new Date().getFullYear(), 0, 1)
@@ -374,79 +361,5 @@ export const dashboardService = {
       departmentActivity,
       operationalAlerts,
     };
-  },
-
-  async getRevenue(): Promise<RevenueData[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase.from("dashboardrevenue").select("*");
-
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  getTarget: async (): Promise<DashboardTarget> => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("dashboardtarget")
-      .select("*")
-      .single();
-
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  async getVisitors(): Promise<VisitorsData[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("dashboardvisitors")
-      .select("*");
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  getDemographics: async (): Promise<DemographicData[]> => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("dashboarddemographics")
-      .select("*");
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  async getRecentOrders(): Promise<RecentOrder[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase.from("recentorders").select("*");
-
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  async getTopProducts(): Promise<TopProduct[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase.from("topproducts").select("*");
-
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-
-  async getLatestUsers(): Promise<User[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase.from("profiles").select("*");
-    if (error) {
-      throw error;
-    }
-    return data;
   },
 };

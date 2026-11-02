@@ -1,83 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
-import { createClient } from "@/lib/supabase/client";
 import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
 import { useErrorHandler } from "@/shared/hooks";
 import Modal from "@/shared/components/ui/common/Modal";
 
-const patientFormSchema = z.object({
-  full_name: z
-    .string()
-    .trim()
-    .min(1, "Please enter the patient's full name.")
-    .max(120, "Full name must be 120 characters or fewer."),
-  age: z
-    .string()
-    .trim()
-    .refine(
-      (value) =>
-        value === "" || (/^\d+$/.test(value) && Number(value) <= 150),
-      "Age must be a whole number between 0 and 150.",
-    ),
-  gender: z.enum(["", "Male", "Female", "Other"]),
-  phone: z
-    .string()
-    .trim()
-    .max(30, "Phone number must be 30 characters or fewer.")
-    .refine(
-      (value) =>
-        value === "" ||
-        (/^[+()\d.\-\s]+$/.test(value) && /\d/.test(value)),
-      "Please enter a valid phone number.",
-    ),
-  email: z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === "" || z.string().email().safeParse(value).success,
-      "Please enter a valid email address.",
-    ),
-  condition: z
-    .string()
-    .trim()
-    .max(200, "Medical condition must be 200 characters or fewer."),
-  status: z.enum(["Active", "Inactive"]),
-});
-
-type PatientFormValues = z.infer<typeof patientFormSchema>;
-
-interface Patient {
-  id: string;
-  full_name: string;
-  age: number | null;
-  gender: string | null;
-  phone: string | null;
-  email: string | null;
-  condition: string | null;
-  status: string;
-  created_at: string;
-}
-
-const supabase = createClient();
+import { usePatients } from "../hooks/usePatients";
+import { useCreatePatient } from "../hooks/useCreatePatient";
+import {
+  patientFormSchema,
+  type PatientFormValues,
+} from "../schemas/patientForm.schema";
+import type { Patient } from "../types/patient.type";
 
 export default function PatientsClient() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const {
+    data: patients = [],
+    isLoading: loading,
+    isError,
+    error,
+  } = usePatients();
+
+  const createPatientMutation = useCreatePatient();
 
   const {
     register,
@@ -101,34 +57,10 @@ export default function PatientsClient() {
   const rootRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
 
-  useErrorHandler(Boolean(error), error);
-
-  useEffect(() => {
-    async function fetchPatients() {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .schema("medical")
-        .from("patients")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (fetchError) {
-        setError(fetchError);
-        console.error("Patients fetch error:", fetchError);
-      } else {
-        setPatients((data ?? []) as Patient[]);
-      }
-
-      setLoading(false);
-    }
-
-    fetchPatients();
-  }, []);
+  useErrorHandler(isError, error);
 
   const filteredPatients = useMemo(() => {
-    return patients.filter((patient) => {
+    return patients.filter((patient: Patient) => {
       const searchValue = search.toLowerCase();
 
       const matchesSearch =
@@ -144,42 +76,29 @@ export default function PatientsClient() {
   }, [patients, search, statusFilter]);
 
   const activeCount = patients.filter(
-    (patient) => patient.status === "Active",
+    (patient: Patient) => patient.status === "Active",
   ).length;
 
   const inactiveCount = patients.filter(
-    (patient) => patient.status !== "Active",
+    (patient: Patient) => patient.status !== "Active",
   ).length;
 
   const handleAddPatient = async (formData: PatientFormValues) => {
     setFormError("");
+
     const age = formData.age ? Number(formData.age) : null;
 
-    setIsSaving(true);
-
     try {
-      const { data, error: insertError } = await supabase
-        .schema("medical")
-        .from("patients")
-        .insert({
-          full_name: formData.full_name,
-          age,
-          gender: formData.gender || null,
-          phone: formData.phone || null,
-          email: formData.email || null,
-          condition: formData.condition || null,
-          status: formData.status,
-        })
-        .select()
-        .single();
+      await createPatientMutation.mutateAsync({
+        full_name: formData.full_name,
+        age,
+        gender: formData.gender || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        condition: formData.condition || null,
+        status: formData.status,
+      });
 
-      if (insertError) {
-        console.error("Add patient error:", insertError);
-        setFormError(insertError.message || "Unable to add patient.");
-        return;
-      }
-
-      setPatients((current) => [data as Patient, ...current]);
       reset();
       setIsAddModalOpen(false);
     } catch (insertError) {
@@ -189,14 +108,11 @@ export default function PatientsClient() {
           ? insertError.message
           : "Unable to add patient.",
       );
-    } finally {
-      setIsSaving(false);
     }
   };
 
   /* ------------------------------ Animations ------------------------------ */
 
-  // Page entrance: header → button → summary cards → table container
   useGSAP(
     () => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -234,7 +150,6 @@ export default function PatientsClient() {
     { scope: rootRef, dependencies: [] },
   );
 
-  // Table rows: stagger in when data loads or the status filter changes
   useGSAP(
     () => {
       if (loading) return;
@@ -342,7 +257,6 @@ export default function PatientsClient() {
         data-animate="table"
         className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
       >
-        {/* Table Header */}
         <div className="flex flex-col gap-4 border-b border-gray-200 p-5 dark:border-gray-800 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -354,7 +268,6 @@ export default function PatientsClient() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            {/* Search */}
             <div className="relative">
               <input
                 type="text"
@@ -376,7 +289,6 @@ export default function PatientsClient() {
               </svg>
             </div>
 
-            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -389,7 +301,6 @@ export default function PatientsClient() {
           </div>
         </div>
 
-        {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[850px] text-left">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
@@ -413,7 +324,7 @@ export default function PatientsClient() {
             </thead>
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading || error ? (
+              {loading || isError ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -438,7 +349,6 @@ export default function PatientsClient() {
                     data-animate="row"
                     className="transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
                   >
-                    {/* Patient */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-sm font-bold text-teal-700 dark:bg-teal-500/10 dark:text-teal-400">
@@ -461,7 +371,6 @@ export default function PatientsClient() {
                       </div>
                     </td>
 
-                    {/* Age / Gender */}
                     <td className="px-5 py-4">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
                         {patient.age ?? "—"} years
@@ -471,19 +380,16 @@ export default function PatientsClient() {
                       </p>
                     </td>
 
-                    {/* Contact */}
                     <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                       {patient.phone || "—"}
                     </td>
 
-                    {/* Condition */}
                     <td className="px-5 py-4">
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         {patient.condition || "Not specified"}
                       </span>
                     </td>
 
-                    {/* Status */}
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -503,7 +409,6 @@ export default function PatientsClient() {
                       </span>
                     </td>
 
-                    {/* Registration Date */}
                     <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {new Date(patient.created_at).toLocaleDateString(
                         "en-US",
@@ -521,8 +426,7 @@ export default function PatientsClient() {
           </table>
         </div>
 
-        {/* Table Footer */}
-        {!loading && !error && (
+        {!loading && !isError && (
           <div className="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing{" "}
@@ -537,10 +441,11 @@ export default function PatientsClient() {
             </p>
           </div>
         )}
+
         <Modal
           isOpen={isAddModalOpen}
           onClose={() => {
-            if (!isSaving) {
+            if (!createPatientMutation.isPending) {
               setIsAddModalOpen(false);
               setFormError("");
               clearErrors();
@@ -556,7 +461,6 @@ export default function PatientsClient() {
             className="space-y-5"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Full Name */}
               <div className="sm:col-span-2">
                 <label
                   htmlFor="patient-full-name"
@@ -588,7 +492,6 @@ export default function PatientsClient() {
                 )}
               </div>
 
-              {/* Age */}
               <div>
                 <label
                   htmlFor="patient-age"
@@ -621,7 +524,6 @@ export default function PatientsClient() {
                 )}
               </div>
 
-              {/* Gender */}
               <div>
                 <label
                   htmlFor="patient-gender"
@@ -643,7 +545,6 @@ export default function PatientsClient() {
                 </select>
               </div>
 
-              {/* Phone */}
               <div>
                 <label
                   htmlFor="patient-phone"
@@ -673,7 +574,6 @@ export default function PatientsClient() {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <label
                   htmlFor="patient-email"
@@ -703,7 +603,6 @@ export default function PatientsClient() {
                 )}
               </div>
 
-              {/* Medical Condition */}
               <div className="sm:col-span-2">
                 <label
                   htmlFor="patient-condition"
@@ -735,7 +634,6 @@ export default function PatientsClient() {
                 )}
               </div>
 
-              {/* Status */}
               <div className="sm:col-span-2">
                 <label
                   htmlFor="patient-status"
@@ -756,18 +654,16 @@ export default function PatientsClient() {
               </div>
             </div>
 
-            {/* Error Message */}
             {formError && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-400">
                 {formError}
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                disabled={isSaving}
+                disabled={createPatientMutation.isPending}
                 onClick={() => {
                   setIsAddModalOpen(false);
                   setFormError("");
@@ -780,10 +676,10 @@ export default function PatientsClient() {
 
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={createPatientMutation.isPending}
                 className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSaving ? "Saving..." : "Add Patient"}
+                {createPatientMutation.isPending ? "Saving..." : "Add Patient"}
               </button>
             </div>
           </form>
@@ -806,7 +702,6 @@ function SummaryCard({ title, value, icon, accent }: SummaryCardProps) {
   const numberRef = useRef<HTMLParagraphElement>(null);
   const [displayedValue, setDisplayedValue] = useState(0);
 
-  // Animated count-up whenever the value changes
   useGSAP(
     () => {
       const counter = { val: displayedValue };

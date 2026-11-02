@@ -31,7 +31,7 @@ const itemVariants: Variants = {
   },
 };
 
-export default function EcommerceMetrics({ stats }: Props) {
+export default function MedicalMetrics({ stats }: Props) {
   const metrics = [
     {
       title: "Total Patients",
