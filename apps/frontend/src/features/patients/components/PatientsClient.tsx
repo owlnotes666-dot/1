@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { createClient } from "@/lib/supabase/client";
 import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
+import { useErrorHandler } from "@/shared/hooks";
 
 gsap.registerPlugin(useGSAP);
 
@@ -28,27 +29,29 @@ const supabase = createClient();
 export default function PatientsClient() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
   const rootRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
 
+  useErrorHandler(Boolean(error), error);
+
   useEffect(() => {
     async function fetchPatients() {
       setLoading(true);
-      setError("");
+      setError(null);
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .schema("medical")
         .from("patients")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        setError("Unable to load patients. Please try again.");
-        console.error("Patients fetch error:", error);
+      if (fetchError) {
+        setError(fetchError);
+        console.error("Patients fetch error:", fetchError);
       } else {
         setPatients((data ?? []) as Patient[]);
       }
@@ -301,22 +304,13 @@ export default function PatientsClient() {
             </thead>
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading ? (
+              {loading || error ? (
                 <tr>
                   <td
                     colSpan={6}
                     className="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     <Loading />
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr data-animate="row">
-                  <td
-                    colSpan={6}
-                    className="px-5 py-12 text-center text-sm text-red-500"
-                  >
-                    {error}
                   </td>
                 </tr>
               ) : filteredPatients.length === 0 ? (
