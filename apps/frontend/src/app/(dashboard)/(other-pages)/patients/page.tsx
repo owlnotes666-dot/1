@@ -1,13 +1,12 @@
 import { Metadata } from "next";
 
-import { OrdersPageClient } from "@/features/orders";
+import PatientsClient from "@/features/patients/components/PatientsClient";
 
 export const metadata: Metadata = {
-  title: "Patients",
-  description: "Patients",
-
+  title: "Patients | Medical Dashboard",
+  description: "Manage clinic patients",
 };
 
-export default function OrdersPage() {
-  return <OrdersPageClient />;
+export default function Patients() {
+  return <PatientsClient />;
 }
