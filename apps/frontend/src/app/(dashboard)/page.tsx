@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { DashboardClient } from "@/features/dashboard";
 
 export const metadata: Metadata = {
-  title: "Overview",
+  title: "Overview | Medical Dashboard",
   description: "Overview",
 };
 

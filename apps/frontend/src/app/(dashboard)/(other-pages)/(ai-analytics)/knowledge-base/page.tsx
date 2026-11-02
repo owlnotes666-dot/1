@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Knowledge Base",
+  title: "Knowledge Base | Medical Dashboard",
   description:
     "Knowledge Base",
   // other metadata

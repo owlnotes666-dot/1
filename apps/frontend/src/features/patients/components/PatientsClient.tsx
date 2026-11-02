@@ -4,12 +4,56 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/client";
 import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
 import { useErrorHandler } from "@/shared/hooks";
 import Modal from "@/shared/components/ui/common/Modal";
+
+const patientFormSchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(1, "Please enter the patient's full name.")
+    .max(120, "Full name must be 120 characters or fewer."),
+  age: z
+    .string()
+    .trim()
+    .refine(
+      (value) =>
+        value === "" || (/^\d+$/.test(value) && Number(value) <= 150),
+      "Age must be a whole number between 0 and 150.",
+    ),
+  gender: z.enum(["", "Male", "Female", "Other"]),
+  phone: z
+    .string()
+    .trim()
+    .max(30, "Phone number must be 30 characters or fewer.")
+    .refine(
+      (value) =>
+        value === "" ||
+        (/^[+()\d.\-\s]+$/.test(value) && /\d/.test(value)),
+      "Please enter a valid phone number.",
+    ),
+  email: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || z.string().email().safeParse(value).success,
+      "Please enter a valid email address.",
+    ),
+  condition: z
+    .string()
+    .trim()
+    .max(200, "Medical condition must be 200 characters or fewer."),
+  status: z.enum(["Active", "Inactive"]),
+});
+
+type PatientFormValues = z.infer<typeof patientFormSchema>;
 
 interface Patient {
   id: string;
@@ -35,14 +79,23 @@ export default function PatientsClient() {
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [formData, setFormData] = useState({
-    full_name: "",
-    age: "",
-    gender: "",
-    phone: "",
-    email: "",
-    condition: "",
-    status: "Active",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    clearErrors,
+    formState: { errors: validationErrors },
+  } = useForm<PatientFormValues>({
+    resolver: zodResolver(patientFormSchema),
+    defaultValues: {
+      full_name: "",
+      age: "",
+      gender: "",
+      phone: "",
+      email: "",
+      condition: "",
+      status: "Active",
+    },
   });
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -98,61 +151,47 @@ export default function PatientsClient() {
     (patient) => patient.status !== "Active",
   ).length;
 
-  const handleAddPatient = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleAddPatient = async (formData: PatientFormValues) => {
     setFormError("");
-
-    if (!formData.full_name.trim()) {
-      setFormError("Please enter the patient's full name.");
-      return;
-    }
-
     const age = formData.age ? Number(formData.age) : null;
-
-    if (age !== null && (!Number.isInteger(age) || age < 0 || age > 150)) {
-      setFormError("Please enter a valid age.");
-      return;
-    }
 
     setIsSaving(true);
 
-    const { data, error: insertError } = await supabase
-      .schema("medical")
-      .from("patients")
-      .insert({
-        full_name: formData.full_name.trim(),
-        age,
-        gender: formData.gender || null,
-        phone: formData.phone.trim() || null,
-        email: formData.email.trim() || null,
-        condition: formData.condition.trim() || null,
-        status: formData.status,
-      })
-      .select()
-      .single();
+    try {
+      const { data, error: insertError } = await supabase
+        .schema("medical")
+        .from("patients")
+        .insert({
+          full_name: formData.full_name,
+          age,
+          gender: formData.gender || null,
+          phone: formData.phone || null,
+          email: formData.email || null,
+          condition: formData.condition || null,
+          status: formData.status,
+        })
+        .select()
+        .single();
 
-    if (insertError) {
+      if (insertError) {
+        console.error("Add patient error:", insertError);
+        setFormError(insertError.message || "Unable to add patient.");
+        return;
+      }
+
+      setPatients((current) => [data as Patient, ...current]);
+      reset();
+      setIsAddModalOpen(false);
+    } catch (insertError) {
       console.error("Add patient error:", insertError);
-      setFormError(insertError.message || "Unable to add patient.");
+      setFormError(
+        insertError instanceof Error
+          ? insertError.message
+          : "Unable to add patient.",
+      );
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    setPatients((current) => [data as Patient, ...current]);
-
-    setFormData({
-      full_name: "",
-      age: "",
-      gender: "",
-      phone: "",
-      email: "",
-      condition: "",
-      status: "Active",
-    });
-
-    setIsSaving(false);
-    setIsAddModalOpen(false);
   };
 
   /* ------------------------------ Animations ------------------------------ */
@@ -280,7 +319,7 @@ export default function PatientsClient() {
           title="Total Patients"
           value={patients.length}
           icon={<PatientIcon />}
-          accent="bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400"
+          accent="bg-blue-800 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400"
         />
 
         <SummaryCard
@@ -504,62 +543,97 @@ export default function PatientsClient() {
             if (!isSaving) {
               setIsAddModalOpen(false);
               setFormError("");
+              clearErrors();
             }
           }}
           title="Add New Patient"
           description="Enter the patient's information to create a new record."
           maxWidth="max-w-2xl"
         >
-          <form onSubmit={handleAddPatient} className="space-y-5">
+          <form
+            noValidate
+            onSubmit={handleSubmit(handleAddPatient)}
+            className="space-y-5"
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Full Name */}
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-full-name"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Full Name <span className="text-red-500">*</span>
                 </label>
 
                 <input
+                  id="patient-full-name"
                   type="text"
-                  required
-                  value={formData.full_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, full_name: e.target.value })
+                  aria-invalid={Boolean(validationErrors.full_name)}
+                  aria-describedby={
+                    validationErrors.full_name
+                      ? "patient-full-name-error"
+                      : undefined
                   }
+                  {...register("full_name")}
                   placeholder="Enter full name"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+                {validationErrors.full_name && (
+                  <p
+                    id="patient-full-name-error"
+                    className="mt-1 text-xs text-red-600 dark:text-red-400"
+                  >
+                    {validationErrors.full_name.message}
+                  </p>
+                )}
               </div>
 
               {/* Age */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-age"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Age
                 </label>
 
                 <input
+                  id="patient-age"
                   type="number"
                   min="0"
                   max="150"
-                  value={formData.age}
-                  onChange={(e) =>
-                    setFormData({ ...formData, age: e.target.value })
+                  step="1"
+                  aria-invalid={Boolean(validationErrors.age)}
+                  aria-describedby={
+                    validationErrors.age ? "patient-age-error" : undefined
                   }
+                  {...register("age")}
                   placeholder="Enter age"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+                {validationErrors.age && (
+                  <p
+                    id="patient-age-error"
+                    className="mt-1 text-xs text-red-600 dark:text-red-400"
+                  >
+                    {validationErrors.age.message}
+                  </p>
+                )}
               </div>
 
               {/* Gender */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-gender"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Gender
                 </label>
 
                 <select
-                  value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gender: e.target.value })
-                  }
+                  id="patient-gender"
+                  aria-invalid={Boolean(validationErrors.gender)}
+                  {...register("gender")}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
                 >
                   <option value="">Select gender</option>
@@ -571,66 +645,109 @@ export default function PatientsClient() {
 
               {/* Phone */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-phone"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Phone
                 </label>
 
                 <input
+                  id="patient-phone"
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                  aria-invalid={Boolean(validationErrors.phone)}
+                  aria-describedby={
+                    validationErrors.phone ? "patient-phone-error" : undefined
                   }
+                  {...register("phone")}
                   placeholder="Enter phone number"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+                {validationErrors.phone && (
+                  <p
+                    id="patient-phone-error"
+                    className="mt-1 text-xs text-red-600 dark:text-red-400"
+                  >
+                    {validationErrors.phone.message}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-email"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Email
                 </label>
 
                 <input
+                  id="patient-email"
                   type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
+                  aria-invalid={Boolean(validationErrors.email)}
+                  aria-describedby={
+                    validationErrors.email ? "patient-email-error" : undefined
                   }
+                  {...register("email")}
                   placeholder="patient@example.com"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+                {validationErrors.email && (
+                  <p
+                    id="patient-email-error"
+                    className="mt-1 text-xs text-red-600 dark:text-red-400"
+                  >
+                    {validationErrors.email.message}
+                  </p>
+                )}
               </div>
 
               {/* Medical Condition */}
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-condition"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Medical Condition
                 </label>
 
                 <input
+                  id="patient-condition"
                   type="text"
-                  value={formData.condition}
-                  onChange={(e) =>
-                    setFormData({ ...formData, condition: e.target.value })
+                  aria-invalid={Boolean(validationErrors.condition)}
+                  aria-describedby={
+                    validationErrors.condition
+                      ? "patient-condition-error"
+                      : undefined
                   }
+                  {...register("condition")}
                   placeholder="Enter medical condition"
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
+                {validationErrors.condition && (
+                  <p
+                    id="patient-condition-error"
+                    className="mt-1 text-xs text-red-600 dark:text-red-400"
+                  >
+                    {validationErrors.condition.message}
+                  </p>
+                )}
               </div>
 
               {/* Status */}
               <div className="sm:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="patient-status"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Status
                 </label>
 
                 <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
+                  id="patient-status"
+                  aria-invalid={Boolean(validationErrors.status)}
+                  {...register("status")}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
                 >
                   <option value="Active">Active</option>
@@ -654,6 +771,7 @@ export default function PatientsClient() {
                 onClick={() => {
                   setIsAddModalOpen(false);
                   setFormError("");
+                  clearErrors();
                 }}
                 className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >

@@ -5,7 +5,7 @@ import Calendar from "./components/Calendar";
 
 
 export const metadata: Metadata = {
-  title: "Appointments",
+  title: "Appointments | Medical Dashboard",
   description:
     "Appointments",
   // other metadata

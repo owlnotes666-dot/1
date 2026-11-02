@@ -4,7 +4,7 @@ import ErrorPage from "@/shared/components/errors/ErrorPage";
 import AnimatedLogo500 from "@/shared/components/errors/500LogoAnimation";
 
 export const metadata: Metadata = {
-  title: "Error 500",
+  title: "Error 500 | Medical Dashboard",
   description: "Error 500 ",
 };
 

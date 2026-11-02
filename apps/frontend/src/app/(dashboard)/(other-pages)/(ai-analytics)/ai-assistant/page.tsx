@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ai Assistant",
+  title: "Ai Assistant | Medical Dashboard",
   description:
     "Ai Assistant",
   // other metadata

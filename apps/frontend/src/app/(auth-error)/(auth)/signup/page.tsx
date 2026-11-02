@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import SignUpForm from "@/features/auth/components/SignUpForm";
 
 export const metadata: Metadata = {
-  title: "SignUp",
+  title: "SignUp | Medical Dashboard",
   description: "SignUp ",
   // other metadata
 };

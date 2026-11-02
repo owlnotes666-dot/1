@@ -5,7 +5,7 @@ import AnimatedLogo404 from "@/shared/components/errors/404LogoAnimation";
 
 
 export const metadata: Metadata = {
-  title: "Error 404",
+  title: "Error 404 | Medical Dashboard",
   description: "Error 404 ",
 };
 
