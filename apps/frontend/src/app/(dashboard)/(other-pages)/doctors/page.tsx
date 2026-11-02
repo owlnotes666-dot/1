@@ -1,4 +1,11 @@
-import React from 'react'
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Doctors",
+  description:
+    "Doctors",
+  // other metadata
+};
 
 function Doctors() {
   return (

@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import { OrdersPageClient } from "@/features/orders";
 
 export const metadata: Metadata = {
-  title: "Orders",
-  description: "Orders",
+  title: "Patients",
+  description: "Patients",
 
 };
 

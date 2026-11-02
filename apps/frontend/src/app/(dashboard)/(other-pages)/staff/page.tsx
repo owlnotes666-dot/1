@@ -1,9 +1,13 @@
-import React from 'react'
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Staff",
+  description: "Staff",
+  // other metadata
+};
 
 function Staff() {
-  return (
-    <div>Staff</div>
-  )
+  return <div>Staff</div>;
 }
 
-export default Staff
+export default Staff;

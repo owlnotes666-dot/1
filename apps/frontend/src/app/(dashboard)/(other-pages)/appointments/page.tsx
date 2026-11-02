@@ -5,15 +5,15 @@ import Calendar from "./components/Calendar";
 
 
 export const metadata: Metadata = {
-  title: "Calendar",
+  title: "Appointments",
   description:
-    "Calendar",
+    "Appointments",
   // other metadata
 };
 export default function page() {
   return (
     <div>
-      <PageBreadcrumb pageTitle="Calendar" />
+      <PageBreadcrumb pageTitle="Appointments" />
       <Calendar />
     </div>
   );
