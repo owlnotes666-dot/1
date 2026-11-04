@@ -39,8 +39,6 @@ export interface AppointmentFilters {
   status?: AppointmentStatus | "All";
   doctorName?: string;
   date?: string;
-  page?: number;
-  pageSize?: number;
 }
 
 

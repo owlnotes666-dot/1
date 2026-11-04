@@ -28,7 +28,7 @@ export default function AppointmentFilters({ filters, onChange }: Props) {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (search !== (filters.search ?? "")) {
-        onChange({ ...filters, search: search.trim() || undefined, page: 1 });
+        onChange({ ...filters, search: search.trim() || undefined });
       }
     }, 400);
 
@@ -41,7 +41,6 @@ export default function AppointmentFilters({ filters, onChange }: Props) {
         onChange({
           ...filters,
           doctorName: doctorName.trim() || undefined,
-          page: 1,
         });
       }
     }, 400);
@@ -53,14 +52,13 @@ export default function AppointmentFilters({ filters, onChange }: Props) {
     onChange({
       ...filters,
       [key]: value === "All" || value === "" ? undefined : value,
-      page: 1,
     });
   };
 
   const clearFilters = () => {
     setSearch("");
     setDoctorName("");
-    onChange({ page: 1, pageSize: filters.pageSize });
+    onChange({});
   };
 
   const hasActiveFilters = Boolean(

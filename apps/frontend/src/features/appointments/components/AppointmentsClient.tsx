@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { motion, type Variants } from "framer-motion";
 
+import { DataTablePagination } from "@/shared/components/data-table";
 import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 import AppointmentStats from "./AppointmentStats";
@@ -49,11 +50,11 @@ const itemVariants: Variants = {
   },
 };
 
+const APPOINTMENTS_PAGE_SIZE = 5;
+
 export default function AppointmentsClient() {
-  const [filters, setFilters] = useState<AppointmentFiltersType>({
-    page: 1,
-    pageSize: 10,
-  });
+  const [filters, setFilters] = useState<AppointmentFiltersType>({});
+  const [pageIndex, setPageIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
     useState<AppointmentWithRelations | null>(null);
@@ -74,6 +75,18 @@ export default function AppointmentsClient() {
   useErrorHandler(isError, error);
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const allAppointments = appointments ?? [];
+  const pageCount = Math.ceil(allAppointments.length / APPOINTMENTS_PAGE_SIZE);
+  const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0));
+  const paginatedAppointments = allAppointments.slice(
+    currentPage * APPOINTMENTS_PAGE_SIZE,
+    (currentPage + 1) * APPOINTMENTS_PAGE_SIZE,
+  );
+
+  const handleFiltersChange = (nextFilters: AppointmentFiltersType) => {
+    setFilters(nextFilters);
+    setPageIndex(0);
+  };
 
   const openCreateModal = () => {
     if (!isAdmin || isAdminLoading) return;
@@ -165,7 +178,7 @@ export default function AppointmentsClient() {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <AppointmentFilters filters={filters} onChange={setFilters} />
+        <AppointmentFilters filters={filters} onChange={handleFiltersChange} />
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -175,10 +188,15 @@ export default function AppointmentsClient() {
           </div>
         ) : (
           <AppointmentsTable
-            appointments={appointments ?? []}
+            appointments={paginatedAppointments}
             onEdit={openEditModal}
             onCancel={handleCancel}
             isAdmin={isAdmin && !isAdminLoading}
+            totalCount={allAppointments.length}
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={APPOINTMENTS_PAGE_SIZE}
+            onPageChange={setPageIndex}
           />
         )}
       </motion.div>

@@ -2,6 +2,8 @@
 
 import { CalendarDays, Clock3, UserRound, Stethoscope } from "lucide-react";
 
+import { DataTablePagination } from "@/shared/components/data-table";
+
 import type { AppointmentWithRelations } from "../types";
 
 interface Props {
@@ -9,6 +11,11 @@ interface Props {
   onEdit?: (appointment: AppointmentWithRelations) => void;
   onCancel?: (appointment: AppointmentWithRelations) => void;
   isAdmin: boolean;
+  totalCount: number;
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 const statusStyles: Record<string, string> = {
@@ -51,6 +58,11 @@ export default function AppointmentsTable({
   onEdit,
   onCancel,
   isAdmin,
+  totalCount,
+  page,
+  pageCount,
+  pageSize,
+  onPageChange,
 }: Props) {
   if (appointments.length === 0) {
     return (
@@ -205,6 +217,23 @@ export default function AppointmentsTable({
           </tbody>
         </table>
       </div>
+      <div className="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Showing{" "}
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {page * pageSize + 1}-
+            {Math.min(page * pageSize + appointments.length, totalCount)}
+          </span>{" "}
+          of {totalCount} appointments
+        </p>
+      </div>
+      <DataTablePagination
+        page={page}
+        pageCount={pageCount}
+        onPageChange={onPageChange}
+        showSinglePage
+        variant="teal"
+      />
     </div>
   );
 }
