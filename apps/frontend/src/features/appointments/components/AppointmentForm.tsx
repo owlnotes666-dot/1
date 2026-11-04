@@ -20,7 +20,11 @@ interface Props {
 }
 
 const inputClass =
-  "mt-1 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[#0F9D91] focus:ring-2 focus:ring-[#0F9D91]/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200";
+  "mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[#0F9D91] focus:ring-2 focus:ring-[#0F9D91]/15 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100";
+
+const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300";
+
+const fieldErrorClass = "mt-1.5 text-xs text-red-500";
 
 export default function AppointmentForm({
   appointment,
@@ -66,46 +70,54 @@ export default function AppointmentForm({
     }
   }, [appointment, reset]);
 
-  const fieldErrorClass = "mt-1 text-xs text-red-500";
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-6"
+    >
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-500">
-          {" "}
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Loading patients and doctors...{" "}
+        <div className="flex min-h-[220px] items-center justify-center gap-2 py-10 text-sm text-gray-500 dark:text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin text-[#0F9D91]" />
+          Loading patients and doctors...
         </div>
       ) : isError || !options ? (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-950/20">
-          Unable to load patients and doctors. Please try again.{" "}
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Unable to load patients and doctors. Please try again.
         </div>
       ) : (
-        <>
-          {" "}
+        <div className="space-y-5">
+          {/* Patient */}
           <div>
-            {" "}
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Patient{" "}
+            <label htmlFor="patient_id" className={labelClass}>
+              Patient
             </label>
-            <select {...register("patient_id")} className={inputClass}>
-              {" "}
+            <select
+              id="patient_id"
+              {...register("patient_id")}
+              className={inputClass}
+            >
               <option value="">Select a patient</option>
               {options.patients.map((patient) => (
                 <option key={patient.id} value={patient.id}>
-                  {patient.full_name}{" "}
+                  {patient.full_name}
                 </option>
-              ))}{" "}
+              ))}
             </select>
             {errors.patient_id && (
               <p className={fieldErrorClass}>{errors.patient_id.message}</p>
-            )}{" "}
+            )}
           </div>
+
+          {/* Doctor */}
           <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="doctor_id" className={labelClass}>
               Doctor
             </label>
-            <select {...register("doctor_id")} className={inputClass}>
+            <select
+              id="doctor_id"
+              {...register("doctor_id")}
+              className={inputClass}
+            >
               <option value="">Select a doctor</option>
               {options.doctors.map((doctor) => (
                 <option key={doctor.id} value={doctor.id}>
@@ -117,12 +129,15 @@ export default function AppointmentForm({
               <p className={fieldErrorClass}>{errors.doctor_id.message}</p>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+          {/* Date & Time */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="appointment_date" className={labelClass}>
                 Appointment Date
               </label>
               <input
+                id="appointment_date"
                 type="date"
                 {...register("appointment_date")}
                 className={inputClass}
@@ -135,10 +150,11 @@ export default function AppointmentForm({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="appointment_time" className={labelClass}>
                 Appointment Time
               </label>
               <input
+                id="appointment_time"
                 type="time"
                 {...register("appointment_time")}
                 className={inputClass}
@@ -150,11 +166,13 @@ export default function AppointmentForm({
               )}
             </div>
           </div>
+
+          {/* Status */}
           <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="status" className={labelClass}>
               Status
             </label>
-            <select {...register("status")} className={inputClass}>
+            <select id="status" {...register("status")} className={inputClass}>
               <option value="Scheduled">Scheduled</option>
               <option value="Confirmed">Confirmed</option>
               <option value="Completed">Completed</option>
@@ -165,14 +183,16 @@ export default function AppointmentForm({
               <p className={fieldErrorClass}>{errors.status.message}</p>
             )}
           </div>
-        </>
+        </div>
       )}
 
-      <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+      {/* Actions */}
+      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-gray-800 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          disabled={isSubmitting}
+          className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
         >
           Cancel
         </button>
@@ -180,7 +200,7 @@ export default function AppointmentForm({
         <button
           type="submit"
           disabled={isSubmitting || isLoading || isError || !options}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0F9D91] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0c897f] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0F9D91] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0c897f] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {appointment ? "Save Changes" : "Schedule Appointment"}

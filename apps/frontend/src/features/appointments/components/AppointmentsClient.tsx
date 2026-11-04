@@ -202,16 +202,31 @@ export default function AppointmentsClient() {
       </motion.div>
 
       {isAdmin && !isAdminLoading && (
-        <Modal isOpen={isModalOpen} onClose={closeModal}>
-          <h2 className="mb-4 text-lg font-semibold">
-            {selectedAppointment ? "Edit Appointment" : "Schedule Appointment"}
-          </h2>
-          <AppointmentForm
-            appointment={selectedAppointment}
-            isSubmitting={isSubmitting}
-            onSubmit={handleSubmit}
-            onClose={closeModal}
-          />
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          className="m-4 max-h-[calc(100vh-2rem)] max-w-xl overflow-y-auto"
+        >
+          <div className="p-5 sm:p-7">
+            <div className="mb-6 border-b border-gray-100 pb-5 pr-12 dark:border-gray-800">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                {selectedAppointment
+                  ? "Edit Appointment"
+                  : "Schedule Appointment"}
+              </h2>
+              <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                {selectedAppointment
+                  ? "Update the appointment details below."
+                  : "Enter the details to schedule a new appointment."}
+              </p>
+            </div>
+            <AppointmentForm
+              appointment={selectedAppointment}
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+              onClose={closeModal}
+            />
+          </div>
         </Modal>
       )}
     </motion.div>
