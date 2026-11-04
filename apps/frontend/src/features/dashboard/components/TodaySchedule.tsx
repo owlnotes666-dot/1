@@ -35,10 +35,10 @@ export default function TodaySchedule() {
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 dark:border-gray-800 md:px-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Today's Schedule
+            Today&apos;s Schedule
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Overview of today's appointments
+            Overview of today&apos;s appointments
           </p>
         </div>
 

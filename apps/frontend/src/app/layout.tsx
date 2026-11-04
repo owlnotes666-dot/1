@@ -1,17 +1,9 @@
-import { Outfit, Geist } from "next/font/google";
 import "flatpickr/dist/flatpickr.css";
 
 import "./globals.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import QueryProvider from "@/shared/providers/query-provider";
-import { cn } from "@/lib/utils";
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
-
-const outfit = Outfit({
-  subsets: ["latin"],
-});
 
 export default function RootLayout({
   children,
@@ -21,10 +13,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("font-sans", geist.variable, "dark")}
+      className="font-sans dark"
       suppressHydrationWarning
     >
-      <body className={`${outfit.className} dark:bg-gray-900`}>
+      <body className="dark:bg-gray-900">
         <ThemeProvider>
           <SidebarProvider>
             <QueryProvider>{children}</QueryProvider>

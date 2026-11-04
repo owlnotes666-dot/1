@@ -5,9 +5,11 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
 
+  root: path.resolve(__dirname, "apps/frontend"),
+
   test: {
     environment: "jsdom",
-    setupFiles: ["./src/tests/setup.ts"],
+    setupFiles: ["src/tests/setup.ts"],
     globals: true,
     css: true,
 
@@ -47,7 +49,7 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "apps/frontend/src"),
     },
   },
 });

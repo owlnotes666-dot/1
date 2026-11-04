@@ -3,10 +3,10 @@
   "version": "2.3.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
+    "dev": "next dev apps/frontend",
+    "build": "next build apps/frontend",
+    "start": "next start apps/frontend",
+    "lint": "eslint apps/frontend/src",
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui"

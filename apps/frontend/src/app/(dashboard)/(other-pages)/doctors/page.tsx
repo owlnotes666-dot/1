@@ -1,16 +1,12 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
+
+import DoctorsClient from "@/features/doctors/components/DoctorsClient";
 
 export const metadata: Metadata = {
   title: "Doctors | Medical Dashboard",
-  description:
-    "Doctors",
-  // other metadata
+  description: "Manage doctors and their information.",
 };
 
-function Doctors() {
-  return (
-    <div>Doctors</div>
-  )
+export default function Doctors() {
+  return <DoctorsClient />;
 }
-
-export default Doctors
