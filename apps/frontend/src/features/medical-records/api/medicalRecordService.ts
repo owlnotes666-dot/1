@@ -5,6 +5,8 @@ import type {
   MedicalRecordWithRelations,
   CreateMedicalRecordInput,
   UpdateMedicalRecordStatusInput,
+  MedicalRecordStatusHistory,
+  MedicalRecordDetails,
 } from "../types/medicalRecord.types";
 
 const supabase = createClient();
@@ -15,7 +17,8 @@ export async function getMedicalRecords(): Promise<
   const { data, error } = await supabase
     .schema("medical")
     .from("medical_records")
-    .select(`
+    .select(
+      `
       id,
       patient_id,
       doctor_id,
@@ -30,7 +33,8 @@ export async function getMedicalRecords(): Promise<
         full_name,
         specialty
       )
-    `)
+    `,
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -41,7 +45,7 @@ export async function getMedicalRecords(): Promise<
 }
 
 export async function createMedicalRecord(
-  input: CreateMedicalRecordInput
+  input: CreateMedicalRecordInput,
 ): Promise<MedicalRecord> {
   const { data, error } = await supabase
     .schema("medical")
@@ -52,7 +56,8 @@ export async function createMedicalRecord(
       title: input.title,
       description: input.description,
     })
-    .select(`
+    .select(
+      `
       id,
       patient_id,
       doctor_id,
@@ -60,7 +65,8 @@ export async function createMedicalRecord(
       description,
       status,
       created_at
-    `)
+    `,
+    )
     .single();
 
   if (error) {
@@ -71,7 +77,7 @@ export async function createMedicalRecord(
 }
 
 export async function updateMedicalRecordStatus(
-  input: UpdateMedicalRecordStatusInput
+  input: UpdateMedicalRecordStatusInput,
 ): Promise<MedicalRecord> {
   const { id, status } = input;
 
@@ -80,7 +86,8 @@ export async function updateMedicalRecordStatus(
     .from("medical_records")
     .update({ status })
     .eq("id", id)
-    .select(`
+    .select(
+      `
       id,
       patient_id,
       doctor_id,
@@ -88,7 +95,8 @@ export async function updateMedicalRecordStatus(
       description,
       status,
       created_at
-    `)
+    `,
+    )
     .single();
 
   if (error) {
@@ -96,4 +104,75 @@ export async function updateMedicalRecordStatus(
   }
 
   return data as MedicalRecord;
+}
+
+export async function getMedicalRecordDetails(recordId: string): Promise<{
+  record: MedicalRecordDetails;
+  statusHistory: MedicalRecordStatusHistory[];
+}> {
+  const supabase = createClient();
+
+  const { data: record, error: recordError } = await supabase
+    .schema("medical")
+    .from("medical_records")
+    .select(
+      `
+      id,
+      patient_id,
+      doctor_id,
+      title,
+      description,
+      status,
+      created_at,
+      patient:patients (
+        full_name,
+        age,
+        gender,
+        phone,
+        email,
+        condition
+      ),
+      doctor:doctors (
+        full_name,
+        specialty,
+        email
+      )
+    `,
+    )
+    .eq("id", recordId)
+    .single();
+
+  if (recordError) {
+    throw recordError;
+  }
+
+  if (!record) {
+    throw new Error("Medical record not found.");
+  }
+
+  const { data: statusHistory, error: historyError } = await supabase
+    .schema("medical")
+    .from("status_history")
+    .select(
+      `
+      id,
+      entity_type,
+      entity_id,
+      old_status,
+      new_status,
+      changed_at
+    `,
+    )
+    .eq("entity_type", "medical_record")
+    .eq("entity_id", recordId)
+    .order("changed_at", { ascending: false });
+
+  if (historyError) {
+    throw historyError;
+  }
+
+  return {
+    record: record as unknown as MedicalRecordDetails,
+    statusHistory: (statusHistory ?? []) as MedicalRecordStatusHistory[],
+  };
 }

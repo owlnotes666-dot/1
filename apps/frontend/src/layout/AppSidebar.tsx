@@ -12,7 +12,6 @@ import {
   BotIcon,
   MedicalHistoryIcon,
   StaffIcon,
-  SettingIcon,
   DoctorsIcon,
 } from "../icons/index";
 import AnimatedMedicalSymbolIcon from "@/shared/components/ui/logo/AnimatedMedicalSymbolIcon";
@@ -61,11 +60,6 @@ const othersItems: NavItem[] = [
     icon: <StaffIcon />,
     name: "Staff",
     path: "/staff",
-  },
-  {
-    icon: <SettingIcon />,
-    name: "Settings",
-    path: "/settings",
   },
 ];
 

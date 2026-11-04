@@ -3,21 +3,19 @@
 import { useMemo, useState, type ReactNode } from "react";
 
 import { useMedicalRecords } from "../hooks/useMedicalRecords";
-import type { MedicalRecordStatus } from "../types/medicalRecord.types";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 import AddMedicalRecordModal from "./AddMedicalRecordModal";
-
 import { CheckLineIcon, DocsIcon, EyeIcon, TimeIcon } from "@/icons";
+import MedicalRecordDetailsModal from "./MedicalRecordDetailsModal";
 import MedicalRecordStatusSelect from "./MedicalRecordStatusSelect.tsx";
+import MedicalRecordsFilter from "./MedicalRecordsFilter";
+import { useMedicalRecordFilters } from "../hooks/useMedicalRecordFilters";
+import { usePatients } from "@/features/patients/hooks/usePatients";
+import { useDoctors } from "@/features/doctors/hooks/useDoctors";
+import Loading from "@/app/loading";
+import { DataTablePagination } from "@/shared/components/data-table";
 
-const statusStyles: Record<MedicalRecordStatus, string> = {
-  Pending:
-    "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20",
-  Reviewed:
-    "bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/20",
-  Completed:
-    "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20",
-};
+const MEDICAL_RECORDS_PAGE_SIZE = 5;
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -66,20 +64,51 @@ export default function MedicalRecordsClient() {
     refetch,
   } = useMedicalRecords();
 
+  const { data: patients = [] } = usePatients();
+  const { data: doctors = [] } = useDoctors();
+
+  const {
+    search,
+    setSearch,
+    status,
+    setStatus,
+    patientId,
+    setPatientId,
+    doctorId,
+    setDoctorId,
+    filteredRecords,
+    clearFilters,
+    hasActiveFilters,
+  } = useMedicalRecordFilters(records);
+
   const stats = useMemo(
     () => ({
-      total: records.length,
-      pending: records.filter((record) => record.status === "Pending").length,
-      reviewed: records.filter((record) => record.status === "Reviewed").length,
-      completed: records.filter((record) => record.status === "Completed")
+      total: filteredRecords.length,
+      pending: filteredRecords.filter((record) => record.status === "Pending")
         .length,
+      reviewed: filteredRecords.filter((record) => record.status === "Reviewed")
+        .length,
+      completed: filteredRecords.filter(
+        (record) => record.status === "Completed",
+      ).length,
     }),
-    [records],
+    [filteredRecords],
   );
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [pageIndex, setPageIndex] = useState(0);
 
   const { data: isAdmin = false, isLoading: isAdminLoading } = useIsAdmin();
+
+  const pageCount = Math.ceil(
+    filteredRecords.length / MEDICAL_RECORDS_PAGE_SIZE,
+  );
+  const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0));
+  const paginatedRecords = filteredRecords.slice(
+    currentPage * MEDICAL_RECORDS_PAGE_SIZE,
+    (currentPage + 1) * MEDICAL_RECORDS_PAGE_SIZE,
+  );
 
   return (
     <div className="space-y-6">
@@ -146,6 +175,36 @@ export default function MedicalRecordsClient() {
         />
       </div>
 
+      <MedicalRecordsFilter
+        search={search}
+        setSearch={(value) => {
+          setSearch(value);
+          setPageIndex(0);
+        }}
+        status={status}
+        setStatus={(value) => {
+          setStatus(value);
+          setPageIndex(0);
+        }}
+        patientId={patientId}
+        setPatientId={(value) => {
+          setPatientId(value);
+          setPageIndex(0);
+        }}
+        doctorId={doctorId}
+        setDoctorId={(value) => {
+          setDoctorId(value);
+          setPageIndex(0);
+        }}
+        patients={patients}
+        doctors={doctors}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={() => {
+          clearFilters();
+          setPageIndex(0);
+        }}
+      />
+
       {/* Records Table */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
@@ -167,9 +226,6 @@ export default function MedicalRecordsClient() {
           <div className="flex min-h-64 items-center justify-center">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-teal-600 dark:border-gray-700 dark:border-t-teal-400" />
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                Loading medical records...
-              </p>
             </div>
           </div>
         ) : isError ? (
@@ -187,7 +243,7 @@ export default function MedicalRecordsClient() {
               Try Again
             </button>
           </div>
-        ) : records.length === 0 ? (
+        ) : filteredRecords.length === 0 ? (
           <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-2xl text-gray-400 dark:bg-gray-800 dark:text-gray-500">
               ▤
@@ -209,11 +265,12 @@ export default function MedicalRecordsClient() {
                   <th className="px-6 py-4">Doctor</th>
                   <th className="px-6 py-4">Date Created</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {records.map((record) => (
+                {paginatedRecords.map((record) => (
                   <tr
                     key={record.id}
                     className="transition hover:bg-gray-50/70 dark:hover:bg-gray-800/30"
@@ -253,11 +310,29 @@ export default function MedicalRecordsClient() {
                         isAdmin={isAdmin}
                       />
                     </td>
+                    <td className="px-6 py-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRecordId(record.id)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-teal-200 px-3 py-2 text-xs font-semibold text-teal-700 transition hover:bg-teal-50 dark:border-teal-800 dark:text-teal-400 dark:hover:bg-teal-500/10"
+                      >
+                        <EyeIcon />
+                        View
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+        {!isLoading && !isError && filteredRecords.length > 0 && (
+          <DataTablePagination
+            page={currentPage}
+            pageCount={pageCount}
+            onPageChange={setPageIndex}
+            showSinglePage
+          />
         )}
       </div>
       {isAdmin && (
@@ -266,6 +341,11 @@ export default function MedicalRecordsClient() {
           onClose={() => setIsAddModalOpen(false)}
         />
       )}
+      <MedicalRecordDetailsModal
+        recordId={selectedRecordId}
+        isOpen={selectedRecordId !== null}
+        onClose={() => setSelectedRecordId(null)}
+      />
     </div>
   );
 }
