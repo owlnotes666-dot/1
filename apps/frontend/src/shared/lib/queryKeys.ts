@@ -24,4 +24,14 @@ export const queryKeys = {
   profile: {
     me: ["profile"] as const,
   },
+
+  medicalRecords: {
+    all: ["medicalRecords"] as const,
+    lists: () => [...queryKeys.medicalRecords.all, "list"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.medicalRecords.lists(), filters] as const,
+    details: () => [...queryKeys.medicalRecords.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.medicalRecords.details(), id] as const,
+  },
 };

@@ -1,16 +1,11 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import MedicalRecordsClient from "@/features/medical-records/components/MedicalRecordsClient";
 
 export const metadata: Metadata = {
   title: "Medical Records | Medical Dashboard",
-  description:
-    "Medical Records",
-  // other metadata
+  description: "Manage patient medical records.",
 };
 
-function MedicalRecords() {
-  return (
-    <div>MedicalRecords</div>
-  )
+export default function MedicalRecordsPage() {
+  return <MedicalRecordsClient />;
 }
-
-export default MedicalRecords
