@@ -4,18 +4,26 @@ interface DataTablePaginationProps {
   page: number;
   pageCount: number;
   onPageChange: (page: number) => void;
+  showSinglePage?: boolean;
+  variant?: "default" | "teal";
 }
 
 export function DataTablePagination({
   page,
   pageCount,
   onPageChange,
+  showSinglePage = false,
+  variant = "default",
 }: DataTablePaginationProps) {
-  if (pageCount <= 1) {
+  if (pageCount === 0 || (pageCount === 1 && !showSinglePage)) {
     return null;
   }
 
   const currentPage = page + 1;
+  const activePageClass =
+    variant === "teal"
+      ? "bg-teal-600 text-white shadow-theme-xs dark:bg-teal-600 dark:text-white"
+      : "bg-[#465FFF] text-white shadow-theme-xs dark:bg-[#465FFF] dark:text-white";
 
   const getPages = (): (number | "...")[] => {
     if (pageCount <= 7) {
@@ -93,7 +101,7 @@ export function DataTablePagination({
               onClick={() => onPageChange(item - 1)}
               className={`flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg px-2 text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-[#465FFF] text-white shadow-theme-xs dark:bg-[#465FFF] dark:text-white"
+                  ? activePageClass
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
               }`}
             >

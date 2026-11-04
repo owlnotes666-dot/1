@@ -11,6 +11,7 @@ import { DocsIcon, EyeIcon, PatientIcon } from "@/icons";
 import Loading from "@/app/loading";
 import { useErrorHandler } from "@/shared/hooks";
 import Modal from "@/shared/components/ui/common/Modal";
+import { DataTablePagination } from "@/shared/components/data-table";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 
 import { usePatients } from "../hooks/usePatients";
@@ -21,9 +22,12 @@ import {
 } from "../schemas/patientForm.schema";
 import type { Patient } from "../types/patient.type";
 
+const PATIENTS_PAGE_SIZE = 5;
+
 export default function PatientsClient() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [pageIndex, setPageIndex] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -77,6 +81,13 @@ export default function PatientsClient() {
       return matchesSearch && matchesStatus;
     });
   }, [patients, search, statusFilter]);
+
+  const pageCount = Math.ceil(filteredPatients.length / PATIENTS_PAGE_SIZE);
+  const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0));
+  const paginatedPatients = filteredPatients.slice(
+    currentPage * PATIENTS_PAGE_SIZE,
+    (currentPage + 1) * PATIENTS_PAGE_SIZE,
+  );
 
   const activeCount = patients.filter(
     (patient: Patient) => patient.status === "Active",
@@ -203,7 +214,7 @@ export default function PatientsClient() {
         clearProps: "all",
       });
     },
-    { scope: rootRef, dependencies: [loading, statusFilter] },
+    { scope: rootRef, dependencies: [loading, statusFilter, currentPage] },
   );
 
   const handleAddBtnEnter = () => {
@@ -317,7 +328,10 @@ export default function PatientsClient() {
                 type="text"
                 placeholder="Search patients..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPageIndex(0);
+                }}
                 className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white sm:w-64"
               />
 
@@ -335,7 +349,10 @@ export default function PatientsClient() {
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPageIndex(0);
+              }}
               className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
             >
               <option value="All">All Statuses</option>
@@ -387,7 +404,7 @@ export default function PatientsClient() {
                   </td>
                 </tr>
               ) : (
-                filteredPatients.map((patient) => (
+                paginatedPatients.map((patient) => (
                   <tr
                     key={patient.id}
                     data-animate="row"
@@ -474,19 +491,29 @@ export default function PatientsClient() {
         </div>
 
         {!loading && !isError && (
-          <div className="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
+          <div className="px-5 py-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing{" "}
               <span className="font-semibold text-gray-900 dark:text-white">
-                {filteredPatients.length}
+                {filteredPatients.length === 0
+                  ? "0"
+                  : `${currentPage * PATIENTS_PAGE_SIZE + 1}-${Math.min(
+                      (currentPage + 1) * PATIENTS_PAGE_SIZE,
+                      filteredPatients.length,
+                    )}`}
               </span>{" "}
-              of{" "}
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {patients.length}
-              </span>{" "}
-              patients
+              of {filteredPatients.length} patients
             </p>
           </div>
+        )}
+        {!loading && !isError && (
+          <DataTablePagination
+            page={currentPage}
+            pageCount={pageCount}
+            onPageChange={setPageIndex}
+            showSinglePage
+            variant="teal"
+          />
         )}
       </div>
       {/* Add Patient Modal - Admin Only */}
