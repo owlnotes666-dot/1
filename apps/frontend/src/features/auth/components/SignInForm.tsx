@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/shadcn/label";
 import { Button } from "@/components/ui/shadcn/button";
 import { useLogin } from "@/features/auth";
 import { signInSchema, SignInSchema } from "@/features/auth";
+import { getSafeRedirectPath } from "@/features/auth/utils/getSafeRedirectPath";
 import { getAuthErrorMessage } from "@/shared/utils/getAuthErrorMessage";
 
 const containerVariants: Variants = {
@@ -63,7 +64,10 @@ export default function SignInForm() {
 
     loginMutation.mutate(data, {
       onSuccess: () => {
-        router.push("/");
+        const nextPath = new URLSearchParams(window.location.search).get(
+          "next",
+        );
+        router.replace(getSafeRedirectPath(nextPath));
       },
 
       onError: (error) => {

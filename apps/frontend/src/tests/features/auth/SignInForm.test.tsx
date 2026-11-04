@@ -15,6 +15,7 @@ vi.mock("framer-motion", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
+    replace: vi.fn(),
   }),
 }));
 
@@ -90,6 +91,7 @@ describe("SignInForm", () => {
 
     const emailInput = screen.getByPlaceholderText("info@gmail.com");
     const submitButton = screen.getByRole("button", { name: /^sign in$/i });
+    expect(submitButton).toHaveAttribute("type", "submit");
 
     fireEvent.change(emailInput, { target: { value: "user@example.com" } });
     fireEvent.click(submitButton);

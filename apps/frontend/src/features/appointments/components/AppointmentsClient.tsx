@@ -1,53 +1,64 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
+import { motion, type Variants } from "framer-motion";
 
 import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
-
 import AppointmentStats from "./AppointmentStats";
 import AppointmentFilters from "./AppointmentFilters";
 import AppointmentsTable from "./AppointmentsTable";
 import AppointmentForm from "./AppointmentForm";
 import AppointmentsHeader from "./AppointmentsHeader";
-
 import {
   useAppointments,
   useCreateAppointment,
   useUpdateAppointment,
   useCancelAppointment,
 } from "../hooks";
-
 import type {
   AppointmentFilters as AppointmentFiltersType,
   AppointmentWithRelations,
 } from "../types";
-
 import type { AppointmentFormValues } from "../schemas/appointmentSchema";
-
 import { Modal } from "@/shared/components/modal";
 import Loading from "@/app/loading";
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 120,
+      damping: 18,
+    },
+  },
+};
 
 export default function AppointmentsClient() {
   const [filters, setFilters] = useState<AppointmentFiltersType>({
     page: 1,
     pageSize: 10,
   });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [selectedAppointment, setSelectedAppointment] =
     useState<AppointmentWithRelations | null>(null);
 
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  const {
-    data: isAdmin = false,
-    isLoading: isAdminLoading,
-  } = useIsAdmin();
+  const { data: isAdmin = false, isLoading: isAdminLoading } = useIsAdmin();
 
   const {
     data: appointments,
@@ -62,78 +73,22 @@ export default function AppointmentsClient() {
 
   useErrorHandler(isError, error);
 
-  const isSubmitting =
-    createMutation.isPending || updateMutation.isPending;
-
-  const isMutating =
-    isSubmitting || cancelMutation.isPending;
-
-  // Sequential soft entrance animation
-  useGSAP(
-    () => {
-      if (isLoading) return;
-
-      const tl = gsap.timeline({
-        defaults: {
-          ease: "power3.out",
-          duration: 0.55,
-        },
-      });
-
-      tl.from("[data-animate='header']", {
-        opacity: 0,
-        y: 24,
-        clearProps: "all",
-      })
-        .from(
-          "[data-animate='stats']",
-          {
-            opacity: 0,
-            y: 28,
-            scale: 0.98,
-            clearProps: "all",
-          },
-          "-=0.3",
-        )
-        .from(
-          "[data-animate='filters']",
-          {
-            opacity: 0,
-            y: 20,
-            clearProps: "all",
-          },
-          "-=0.28",
-        )
-        .from(
-          "[data-animate='content']",
-          {
-            opacity: 0,
-            y: 26,
-            clearProps: "all",
-          },
-          "-=0.25",
-        );
-    },
-    { scope: rootRef, dependencies: [isLoading] },
-  );
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const openCreateModal = () => {
     if (!isAdmin || isAdminLoading) return;
-
     setSelectedAppointment(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (appointment: AppointmentWithRelations) => {
     if (!isAdmin || isAdminLoading) return;
-
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     if (isSubmitting) return;
-
     setIsModalOpen(false);
     setSelectedAppointment(null);
   };
@@ -150,11 +105,9 @@ export default function AppointmentsClient() {
           id: selectedAppointment.id,
           ...values,
         });
-
         toast.success("Appointment updated successfully.");
       } else {
         await createMutation.mutateAsync(values);
-
         toast.success("Appointment scheduled successfully.");
       }
 
@@ -165,9 +118,7 @@ export default function AppointmentsClient() {
     }
   };
 
-  const handleCancel = async (
-    appointment: AppointmentWithRelations,
-  ) => {
+  const handleCancel = async (appointment: AppointmentWithRelations) => {
     if (!isAdmin || isAdminLoading) {
       toast.error("You don't have permission to cancel appointments.");
       return;
@@ -185,7 +136,6 @@ export default function AppointmentsClient() {
 
     try {
       await cancelMutation.mutateAsync(appointment.id);
-
       toast.success("Appointment cancelled successfully.");
     } catch {
       toast.error("Unable to cancel appointment. Please try again.");
@@ -197,26 +147,28 @@ export default function AppointmentsClient() {
   }
 
   return (
-    <div ref={rootRef} className="space-y-6">
-      <div data-animate="header">
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants}>
         <AppointmentsHeader
           onAddAppointment={openCreateModal}
           isAdmin={isAdmin && !isAdminLoading}
         />
-      </div>
+      </motion.div>
 
-      <div data-animate="stats">
+      <motion.div variants={itemVariants}>
         <AppointmentStats />
-      </div>
+      </motion.div>
 
-      <div data-animate="filters">
-        <AppointmentFilters
-          filters={filters}
-          onChange={setFilters}
-        />
-      </div>
+      <motion.div variants={itemVariants}>
+        <AppointmentFilters filters={filters} onChange={setFilters} />
+      </motion.div>
 
-      <div data-animate="content">
+      <motion.div variants={itemVariants}>
         {isError ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20">
             Unable to load appointments. Please refresh the page.
@@ -229,19 +181,13 @@ export default function AppointmentsClient() {
             isAdmin={isAdmin && !isAdminLoading}
           />
         )}
-      </div>
+      </motion.div>
 
       {isAdmin && !isAdminLoading && (
-        <Modal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-        >
+        <Modal isOpen={isModalOpen} onClose={closeModal}>
           <h2 className="mb-4 text-lg font-semibold">
-            {selectedAppointment
-              ? "Edit Appointment"
-              : "Schedule Appointment"}
+            {selectedAppointment ? "Edit Appointment" : "Schedule Appointment"}
           </h2>
-
           <AppointmentForm
             appointment={selectedAppointment}
             isSubmitting={isSubmitting}
@@ -250,6 +196,6 @@ export default function AppointmentsClient() {
           />
         </Modal>
       )}
-    </div>
+    </motion.div>
   );
 }

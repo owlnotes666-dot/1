@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { config, proxy } from "../../proxy";
+import { config, proxy } from "../proxy";
 
 const mockUpdateSession = vi.hoisted(() => vi.fn());
 
