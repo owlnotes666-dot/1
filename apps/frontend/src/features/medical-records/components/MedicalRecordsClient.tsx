@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { motion, type Variants } from "framer-motion";
 
 import { useMedicalRecords } from "../hooks/useMedicalRecords";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
@@ -12,10 +13,47 @@ import MedicalRecordsFilter from "./MedicalRecordsFilter";
 import { useMedicalRecordFilters } from "../hooks/useMedicalRecordFilters";
 import { usePatients } from "@/features/patients/hooks/usePatients";
 import { useDoctors } from "@/features/doctors/hooks/useDoctors";
-import Loading from "@/app/loading";
 import { DataTablePagination } from "@/shared/components/data-table";
 
 const MEDICAL_RECORDS_PAGE_SIZE = 5;
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 120,
+      damping: 18,
+    },
+  },
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 18, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 130,
+      damping: 18,
+    },
+  },
+};
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -37,21 +75,24 @@ function StatCard({
   icon: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ y: -4 }}
+      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400">
           {icon}
         </span>
       </div>
-
       <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
         {value}
       </p>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
         {description}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -105,15 +146,24 @@ export default function MedicalRecordsClient() {
     filteredRecords.length / MEDICAL_RECORDS_PAGE_SIZE,
   );
   const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0));
+
   const paginatedRecords = filteredRecords.slice(
     currentPage * MEDICAL_RECORDS_PAGE_SIZE,
     (currentPage + 1) * MEDICAL_RECORDS_PAGE_SIZE,
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <p className="text-sm font-medium text-teal-600 dark:text-teal-400">
             CLINIC MANAGEMENT
@@ -126,8 +176,10 @@ export default function MedicalRecordsClient() {
           </p>
         </div>
 
-        <button
+        <motion.button
           type="button"
+          whileHover={{ scale: isAdmin && !isAdminLoading ? 1.03 : 1 }}
+          whileTap={{ scale: isAdmin && !isAdminLoading ? 0.97 : 1 }}
           onClick={() => {
             if (isAdmin && !isAdminLoading) setIsAddModalOpen(true);
           }}
@@ -141,72 +193,77 @@ export default function MedicalRecordsClient() {
         >
           <span className="text-lg">+</span>
           Add Medical Record
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <motion.div
+        variants={containerVariants}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <StatCard
           title="Total Records"
           value={stats.total}
           description="All medical records"
           icon={<DocsIcon />}
         />
-
         <StatCard
           title="Pending"
           value={stats.pending}
           description="Waiting for review"
           icon={<TimeIcon />}
         />
-
         <StatCard
           title="Reviewed"
           value={stats.reviewed}
           description="Reviewed by doctors"
           icon={<EyeIcon />}
         />
-
         <StatCard
           title="Completed"
           value={stats.completed}
           description="Completed records"
           icon={<CheckLineIcon />}
         />
-      </div>
+      </motion.div>
 
-      <MedicalRecordsFilter
-        search={search}
-        setSearch={(value) => {
-          setSearch(value);
-          setPageIndex(0);
-        }}
-        status={status}
-        setStatus={(value) => {
-          setStatus(value);
-          setPageIndex(0);
-        }}
-        patientId={patientId}
-        setPatientId={(value) => {
-          setPatientId(value);
-          setPageIndex(0);
-        }}
-        doctorId={doctorId}
-        setDoctorId={(value) => {
-          setDoctorId(value);
-          setPageIndex(0);
-        }}
-        patients={patients}
-        doctors={doctors}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={() => {
-          clearFilters();
-          setPageIndex(0);
-        }}
-      />
+      <motion.div variants={itemVariants}>
+        <MedicalRecordsFilter
+          search={search}
+          setSearch={(value) => {
+            setSearch(value);
+            setPageIndex(0);
+          }}
+          status={status}
+          setStatus={(value) => {
+            setStatus(value);
+            setPageIndex(0);
+          }}
+          patientId={patientId}
+          setPatientId={(value) => {
+            setPatientId(value);
+            setPageIndex(0);
+          }}
+          doctorId={doctorId}
+          setDoctorId={(value) => {
+            setDoctorId(value);
+            setPageIndex(0);
+          }}
+          patients={patients}
+          doctors={doctors}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={() => {
+            clearFilters();
+            setPageIndex(0);
+          }}
+        />
+      </motion.div>
 
       {/* Records Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <motion.div
+        variants={itemVariants}
+        className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
         <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
           <div>
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -216,7 +273,6 @@ export default function MedicalRecordsClient() {
               A list of registered patient records.
             </p>
           </div>
-
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {stats.total} records
           </span>
@@ -268,11 +324,17 @@ export default function MedicalRecordsClient() {
                   <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
-
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {paginatedRecords.map((record) => (
-                  <tr
+                {paginatedRecords.map((record, index) => (
+                  <motion.tr
                     key={record.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: index * 0.04,
+                      duration: 0.35,
+                      ease: "easeOut",
+                    }}
                     className="transition hover:bg-gray-50/70 dark:hover:bg-gray-800/30"
                   >
                     <td className="px-6 py-4">
@@ -310,6 +372,7 @@ export default function MedicalRecordsClient() {
                         isAdmin={isAdmin}
                       />
                     </td>
+
                     <td className="px-6 py-4">
                       <button
                         type="button"
@@ -320,12 +383,13 @@ export default function MedicalRecordsClient() {
                         View
                       </button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+
         {!isLoading && !isError && filteredRecords.length > 0 && (
           <DataTablePagination
             page={currentPage}
@@ -334,18 +398,20 @@ export default function MedicalRecordsClient() {
             showSinglePage
           />
         )}
-      </div>
+      </motion.div>
+
       {isAdmin && (
         <AddMedicalRecordModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
         />
       )}
+
       <MedicalRecordDetailsModal
         recordId={selectedRecordId}
         isOpen={selectedRecordId !== null}
         onClose={() => setSelectedRecordId(null)}
       />
-    </div>
+    </motion.div>
   );
 }
