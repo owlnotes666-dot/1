@@ -59,3 +59,22 @@ export async function updateDoctor(
 
   return data as Doctor;
 }
+
+export async function updateDoctorStatus(
+  id: string,
+  status: "Active" | "Inactive"
+): Promise<Doctor> {
+  const { data, error } = await supabase
+    .schema("medical")
+    .from("doctors")
+    .update({ status })
+    .eq("id", id)
+    .select("id, full_name, specialty, email, status, created_at")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Doctor;
+}

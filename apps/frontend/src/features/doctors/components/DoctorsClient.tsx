@@ -1,22 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DataTablePagination } from "@/shared/components/data-table";
 import { useDoctors } from "../hooks/useDoctors";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
+import { useUpdateDoctorStatus } from "../hooks/useUpdateDoctorStatus";
 import AddDoctorModal from "./AddDoctorModal";
-
-const DOCTORS_PAGE_SIZE = 5;
+import EditDoctorModal from "./EditDoctorModal";
+import type { Doctor } from "../types/doctor.types";
 
 export default function DoctorsClient() {
   const { data: doctors = [], isLoading, isError, error } = useDoctors();
 
   const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
 
+  const updateStatusMutation = useUpdateDoctorStatus();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
-  const [pageIndex, setPageIndex] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
   const specialties = useMemo(
     () => [
@@ -42,12 +44,18 @@ export default function DoctorsClient() {
     });
   }, [doctors, searchTerm, selectedSpecialty]);
 
-  const pageCount = Math.ceil(filteredDoctors.length / DOCTORS_PAGE_SIZE);
-  const currentPage = Math.min(pageIndex, Math.max(pageCount - 1, 0));
-  const paginatedDoctors = filteredDoctors.slice(
-    currentPage * DOCTORS_PAGE_SIZE,
-    (currentPage + 1) * DOCTORS_PAGE_SIZE,
-  );
+  const handleStatusChange = (doctor: Doctor) => {
+    if (!isAdmin || isAdminLoading || updateStatusMutation.isPending) {
+      return;
+    }
+
+    const nextStatus = doctor.status === "Active" ? "Inactive" : "Active";
+
+    updateStatusMutation.mutate({
+      id: doctor.id,
+      status: nextStatus,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -89,14 +97,7 @@ export default function DoctorsClient() {
           </h2>
 
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Showing{" "}
-            {filteredDoctors.length === 0
-              ? "0"
-              : `${currentPage * DOCTORS_PAGE_SIZE + 1}-${Math.min(
-                  (currentPage + 1) * DOCTORS_PAGE_SIZE,
-                  filteredDoctors.length,
-                )}`}{" "}
-            of {filteredDoctors.length} filtered doctors ({doctors.length} total)
+            Showing {filteredDoctors.length} of {doctors.length} doctors
           </p>
         </div>
 
@@ -113,10 +114,7 @@ export default function DoctorsClient() {
               id="doctor-search"
               type="search"
               value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setPageIndex(0);
-              }}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by name or email..."
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
@@ -133,10 +131,7 @@ export default function DoctorsClient() {
             <select
               id="doctor-specialty"
               value={selectedSpecialty}
-              onChange={(event) => {
-                setSelectedSpecialty(event.target.value);
-                setPageIndex(0);
-              }}
+              onChange={(event) => setSelectedSpecialty(event.target.value)}
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               {specialties.map((specialty) => (
@@ -148,6 +143,14 @@ export default function DoctorsClient() {
           </div>
         </div>
 
+        {updateStatusMutation.isError && (
+          <div className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-400">
+            Failed to update doctor status:{" "}
+            {updateStatusMutation.error instanceof Error
+              ? updateStatusMutation.error.message
+              : JSON.stringify(updateStatusMutation.error)}
+          </div>
+        )}
         {isLoading ? (
           <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading doctors...
@@ -169,11 +172,12 @@ export default function DoctorsClient() {
                   <th className="px-4 py-3 font-medium">Specialty</th>
                   <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {paginatedDoctors.map((doctor) => (
+                {filteredDoctors.map((doctor) => (
                   <tr key={doctor.id}>
                     <td className="whitespace-nowrap px-4 py-4 font-medium text-gray-900 dark:text-white">
                       {doctor.full_name}
@@ -198,30 +202,73 @@ export default function DoctorsClient() {
                         {doctor.status}
                       </span>
                     </td>
+
+                    <td className="whitespace-nowrap px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDoctor(doctor)}
+                          disabled={!isAdmin || isAdminLoading}
+                          title={
+                            isAdmin
+                              ? "Edit doctor"
+                              : "Only administrators can edit doctors."
+                          }
+                          className="rounded-lg px-3 py-1.5 text-sm font-medium text-teal-700 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-teal-400 dark:hover:bg-teal-950/40"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(doctor)}
+                          disabled={
+                            !isAdmin ||
+                            isAdminLoading ||
+                            updateStatusMutation.isPending
+                          }
+                          title={
+                            isAdmin
+                              ? `${doctor.status === "Active" ? "Deactivate" : "Activate"} doctor`
+                              : "Only administrators can change doctor status."
+                          }
+                          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                            doctor.status === "Active"
+                              ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                              : "text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
+                          }`}
+                        >
+                          {updateStatusMutation.isPending
+                            ? "Updating..."
+                            : doctor.status === "Active"
+                              ? "Deactivate"
+                              : "Activate"}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        {!isLoading && !isError && filteredDoctors.length > 0 && (
-          <div className="mt-4 -mx-6 -mb-6">
-            <DataTablePagination
-              page={currentPage}
-              pageCount={pageCount}
-              onPageChange={setPageIndex}
-              showSinglePage
-              variant="teal"
-            />
-          </div>
-        )}
       </div>
 
       {isAdmin && (
-        <AddDoctorModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-        />
+        <>
+          <AddDoctorModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+          />
+
+          {selectedDoctor && (
+            <EditDoctorModal
+              isOpen={!!selectedDoctor}
+              doctor={selectedDoctor}
+              onClose={() => setSelectedDoctor(null)}
+            />
+          )}
+        </>
       )}
     </div>
   );
