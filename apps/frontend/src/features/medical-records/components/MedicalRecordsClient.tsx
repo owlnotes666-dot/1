@@ -6,7 +6,9 @@ import { useMedicalRecords } from "../hooks/useMedicalRecords";
 import type { MedicalRecordStatus } from "../types/medicalRecord.types";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 import AddMedicalRecordModal from "./AddMedicalRecordModal";
+
 import { CheckLineIcon, DocsIcon, EyeIcon, TimeIcon } from "@/icons";
+import MedicalRecordStatusSelect from "./MedicalRecordStatusSelect.tsx";
 
 const statusStyles: Record<MedicalRecordStatus, string> = {
   Pending:
@@ -245,13 +247,11 @@ export default function MedicalRecordsClient() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${
-                          statusStyles[record.status]
-                        }`}
-                      >
-                        {record.status}
-                      </span>
+                      <MedicalRecordStatusSelect
+                        recordId={record.id}
+                        status={record.status}
+                        isAdmin={isAdmin}
+                      />
                     </td>
                   </tr>
                 ))}

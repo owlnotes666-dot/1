@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSafeRedirectPath } from "@/features/auth/utils/getSafeRedirectPath";
 
@@ -38,6 +39,22 @@ function isAuthRoute(pathname: string) {
   return authRoutes.includes(pathname);
 }
 
+function getAuthUnavailableResponse(error: unknown) {
+  if (!isAuthRetryableFetchError(error)) {
+    return null;
+  }
+
+  console.error("Supabase authentication is temporarily unavailable", error);
+
+  return NextResponse.json(
+    { error: "Authentication service is temporarily unavailable." },
+    {
+      status: 503,
+      headers: { "Retry-After": "5" },
+    },
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -75,7 +92,28 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data } = await supabase.auth.getClaims();
+  let claimsResult;
+  try {
+    claimsResult = await supabase.auth.getClaims();
+  } catch (error) {
+    const unavailableResponse = getAuthUnavailableResponse(error);
+    if (unavailableResponse) {
+      return unavailableResponse;
+    }
+
+    throw error;
+  }
+
+  const { data, error } = claimsResult;
+
+  if (error) {
+    const unavailableResponse = getAuthUnavailableResponse(error);
+    if (unavailableResponse) {
+      return unavailableResponse;
+    }
+
+    throw error;
+  }
 
   const pathname = request.nextUrl.pathname;
 
