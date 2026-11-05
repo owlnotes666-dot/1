@@ -1,13 +1,11 @@
 import { Metadata } from "next";
+import StaffClient from "@/features/staff/components/StaffClient";
 
 export const metadata: Metadata = {
   title: "Staff | Medical Dashboard",
-  description: "Staff",
-  // other metadata
+  description: "Manage hospital staff members.",
 };
 
-function Staff() {
-  return <div>Staff</div>;
+export default function StaffPage() {
+  return <StaffClient />;
 }
-
-export default Staff;

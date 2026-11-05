@@ -35,4 +35,9 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.medicalRecords.details(), id] as const,
   },
+
+  staff: {
+  all: ["staff"] as const,
+  lists: () => [...queryKeys.staff.all, "list"] as const,
+},
 };
