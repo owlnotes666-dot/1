@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 import { useModal } from "../../../shared/hooks/useModal";
 import { Modal } from "../../../shared/components/modal";
@@ -8,6 +10,22 @@ import { Input } from "@/components/ui/shadcn/input";
 import { Label } from "@/components/ui/shadcn/label";
 import { Button } from "@/components/ui/shadcn/button";
 import type { Profile } from "@/features/profile/types/profile.type";
+import { toast } from "sonner";
+
+import { useUpdateProfile } from "../hooks";
+
+type UserMetaFormValues = Pick<
+  Profile,
+  | "firstname"
+  | "lastname"
+  | "email"
+  | "phone"
+  | "bio"
+  | "facebook"
+  | "twitter"
+  | "linkedin"
+  | "instagram"
+>;
 
 interface Props {
   profile: Profile;
@@ -16,10 +34,64 @@ interface Props {
 export default function UserMetaCard({ profile }: Props) {
   const { isOpen, openModal, closeModal } = useModal();
 
-  const handleSave = () => {
-    closeModal();
-  };
+  const updateProfile = useUpdateProfile();
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<UserMetaFormValues>({
+    defaultValues: {
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      email: profile.email,
+      phone: profile.phone,
+      bio: profile.bio,
+      facebook: profile.facebook,
+      twitter: profile.twitter,
+      linkedin: profile.linkedin,
+      instagram: profile.instagram,
+    },
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    reset({
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      email: profile.email,
+      phone: profile.phone,
+      bio: profile.bio,
+      facebook: profile.facebook,
+      twitter: profile.twitter,
+      linkedin: profile.linkedin,
+      instagram: profile.instagram,
+    });
+  }, [
+    isOpen,
+    profile.bio,
+    profile.email,
+    profile.facebook,
+    profile.firstname,
+    profile.instagram,
+    profile.lastname,
+    profile.linkedin,
+    profile.phone,
+    profile.twitter,
+    reset,
+  ]);
+
+  const handleSave = async (values: UserMetaFormValues) => {
+    try {
+      await updateProfile.mutateAsync(values);
+      toast.success("Profile updated successfully.");
+      closeModal();
+    } catch {
+      toast.error("Unable to update your profile. Please try again.");
+    }
+  };
   return (
     <>
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
@@ -161,7 +233,7 @@ export default function UserMetaCard({ profile }: Props) {
               Update your details to keep your profile up-to-date.
             </p>
           </div>
-          <form className="flex flex-col">
+          <form className="flex flex-col" onSubmit={handleSubmit(handleSave)}>
             <div className="custom-scrollbar h-112.5 overflow-y-auto px-2 pb-3">
               <div>
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
@@ -169,24 +241,24 @@ export default function UserMetaCard({ profile }: Props) {
                 </h5>
 
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div>
+                  <div className="space-y-3">
                     <Label>Facebook</Label>
-                    <Input type="text" defaultValue={profile.facebook} />
+                    <Input type="text" {...register("facebook")} />
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <Label>X.com</Label>
-                    <Input type="text" defaultValue={profile.twitter} />
+                    <Input type="text" {...register("twitter")} />
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <Label>Linkedin</Label>
-                    <Input type="text" defaultValue={profile.linkedin} />
+                    <Input type="text" {...register("linkedin")} />
                   </div>
 
-                  <div>
+                  <div className="space-y-3">
                     <Label>Instagram</Label>
-                    <Input type="text" defaultValue={profile.instagram} />
+                    <Input type="text" {...register("instagram")} />
                   </div>
                 </div>
               </div>
@@ -195,40 +267,50 @@ export default function UserMetaCard({ profile }: Props) {
                   Personal Information
                 </h5>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 ">
+                  <div className="col-span-2 space-y-3 lg:col-span-1">
                     <Label>First Name</Label>
-                    <Input type="text" defaultValue={profile.firstname} />
+                    <Input type="text" {...register("firstname")} />
                   </div>
 
-                  <div className="col-span-2 lg:col-span-1">
+                  <div className="col-span-2 space-y-3 lg:col-span-1">
                     <Label>Last Name</Label>
-                    <Input type="text" defaultValue={profile.lastname} />
+                    <Input type="text" {...register("lastname")} />
                   </div>
 
-                  <div className="col-span-2 lg:col-span-1">
+                  <div className="col-span-2 space-y-3 lg:col-span-1">
                     <Label>Email Address</Label>
-                    <Input type="text" defaultValue={profile.email} />
+                    <Input type="text" {...register("email")} />
                   </div>
 
-                  <div className="col-span-2 lg:col-span-1">
+                  <div className="col-span-2 space-y-3 lg:col-span-1">
                     <Label>Phone</Label>
-                    <Input type="text" defaultValue={profile.phone} />
+                    <Input type="text" {...register("phone")} />
                   </div>
 
-                  <div className="col-span-2">
+                  <div className="col-span-2 space-y-3">
                     <Label>Bio</Label>
-                    <Input type="text" defaultValue={profile.bio} />
+                    <Input type="text" {...register("bio")} />
                   </div>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                onClick={closeModal}
+              >
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                Save Changes
+              <Button
+                type="submit"
+                disabled={isSubmitting || updateProfile.isPending}
+                className="rounded-lg bg-primary px-4 py-2 text-black disabled:opacity-50"
+                size="lg"
+              >
+                {updateProfile.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>

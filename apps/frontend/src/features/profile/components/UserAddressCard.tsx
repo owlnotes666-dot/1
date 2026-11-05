@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+
 import { Input } from "@/components/ui/shadcn/input";
 import { Label } from "@/components/ui/shadcn/label";
 import { Button } from "@/components/ui/shadcn/button";
@@ -7,15 +11,49 @@ import type { Profile } from "@/features/profile/types/profile.type";
 import { useModal } from "@/shared/hooks/useModal";
 import { Modal } from "@/shared/components/modal";
 
+import { useUpdateProfile } from "../hooks";
+
 interface Props {
   profile: Profile;
 }
 
+type AddressFormValues = Pick<Profile, "country" | "city" | "postalCode">;
+
 export default function UserAddressCard({ profile }: Props) {
   const { isOpen, openModal, closeModal } = useModal();
+  const updateProfile = useUpdateProfile();
 
-  const handleSave = () => {
-    closeModal();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<AddressFormValues>({
+    defaultValues: {
+      country: profile.country,
+      city: profile.city,
+      postalCode: profile.postalCode,
+    },
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    reset({
+      country: profile.country,
+      city: profile.city,
+      postalCode: profile.postalCode,
+    });
+  }, [isOpen, profile.city, profile.country, profile.postalCode, reset]);
+
+  const handleSave = async (values: AddressFormValues) => {
+    try {
+      await updateProfile.mutateAsync(values);
+      toast.success("Address updated successfully.");
+      closeModal();
+    } catch {
+      toast.error("Unable to update your address. Please try again.");
+    }
   };
 
   return (
@@ -49,15 +87,6 @@ export default function UserAddressCard({ profile }: Props) {
               <div>
                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                   Postal Code
-                </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {profile.postalCode}
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                  TAX ID
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                   {profile.postalCode}
@@ -99,39 +128,49 @@ export default function UserAddressCard({ profile }: Props) {
               Update your details to keep your profile up-to-date.
             </p>
           </div>
-          <form className="flex flex-col">
+          <form className="flex flex-col" onSubmit={handleSubmit(handleSave)}>
             <div className="px-2 overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                <div>
-                  <Label>Country</Label>
-                  <Input type="text" defaultValue={profile.country} />
-                </div>
-
-                <div>
-                  <Label>City/State</Label>
+              <div className="grid grid-cols-1 gap-x-6 gap-y-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="address-country">Country</Label>
                   <Input
+                    id="address-country"
                     type="text"
-                    defaultValue={profile.city + "/ " + profile.country}
+                    {...register("country")}
                   />
                 </div>
 
-                <div>
-                  <Label>Postal Code</Label>
-                  <Input type="text" defaultValue={profile.postalCode} />
+                <div className="space-y-2">
+                  <Label htmlFor="address-city">City/State</Label>
+                  <Input id="address-city" type="text" {...register("city")} />
                 </div>
 
-                <div>
-                  <Label>TAX ID</Label>
-                  <Input type="text" defaultValue={profile.postalCode} />
+                <div className="space-y-2">
+                  <Label htmlFor="address-postal-code">Postal Code</Label>
+                  <Input
+                    id="address-postal-code"
+                    type="text"
+                    {...register("postalCode")}
+                  />
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                onClick={closeModal}
+              >
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                Save Changes
+              <Button
+                type="submit"
+                disabled={isSubmitting || updateProfile.isPending}
+                size="lg"
+                className="rounded-lg bg-primary px-4 py-2 text-black disabled:opacity-50"
+              >
+                {updateProfile.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>
