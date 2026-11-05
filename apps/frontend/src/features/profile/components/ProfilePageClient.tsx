@@ -32,7 +32,7 @@ const itemVariants: Variants = {
   },
 };
 
-export default function ProfilePageContent() {
+export default function ProfilePageClient() {
   const { data: profile, isLoading, isError, error } = useProfile();
 
   useErrorHandler(isError, error);

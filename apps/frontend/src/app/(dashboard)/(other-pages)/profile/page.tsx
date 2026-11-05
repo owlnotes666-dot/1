@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 
-import ProfilePageContent from "./content/ProfilePageContent";
+import ProfilePageClient from "@/features/profile/components/ProfilePageClient";
+
 
 export const metadata: Metadata = {
   title: "Profile | Medical Dashboard",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Profile() {
-  return <ProfilePageContent />;
+  return <ProfilePageClient />;
 }
