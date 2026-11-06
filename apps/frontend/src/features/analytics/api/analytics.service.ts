@@ -3,6 +3,8 @@ import type {
   AnalyticsStats,
   PatientMonthlyData,
   AnalyticsDateRange,
+  AppointmentStatusData,
+  MedicalRecordStatusData,
 } from "../types/analytics.types";
 
 export const analyticsService = {
@@ -120,11 +122,7 @@ export const analyticsService = {
       1,
     );
 
-    const lastMonth = new Date(
-      endDate.getFullYear(),
-      endDate.getMonth(),
-      1,
-    );
+    const lastMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
 
     while (currentMonth <= lastMonth) {
       const year = currentMonth.getFullYear();
@@ -151,4 +149,57 @@ export const analyticsService = {
 
     return monthlyStats;
   },
+};
+
+export const getAppointmentStatusStats = async (
+  dateRange: AnalyticsDateRange,
+): Promise<AppointmentStatusData[]> => {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .schema("medical")
+    .from("appointments")
+    .select("status")
+    .gte("appointment_date", dateRange.startDate.split("T")[0])
+    .lte("appointment_date", dateRange.endDate.split("T")[0]);
+
+  if (error) throw error;
+
+  const statuses: AppointmentStatusData["status"][] = [
+    "Scheduled",
+    "Completed",
+    "Cancelled",
+  ];
+
+  return statuses.map((status) => ({
+    status,
+    total: (data ?? []).filter((appointment) => appointment.status === status)
+      .length,
+  }));
+};
+
+export const getMedicalRecordStatusStats = async (
+  dateRange: AnalyticsDateRange,
+): Promise<MedicalRecordStatusData[]> => {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .schema("medical")
+    .from("medical_records")
+    .select("status")
+    .gte("created_at", dateRange.startDate)
+    .lte("created_at", dateRange.endDate);
+
+  if (error) throw error;
+
+  const statuses: MedicalRecordStatusData["status"][] = [
+    "Pending",
+    "Reviewed",
+    "Completed",
+  ];
+
+  return statuses.map((status) => ({
+    status,
+    total: (data ?? []).filter((record) => record.status === status).length,
+  }));
 };

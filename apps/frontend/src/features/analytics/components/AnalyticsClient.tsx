@@ -5,6 +5,8 @@ import PatientAnalyticsChart from "./PatientAnalyticsChart";
 import AnalyticsDateFilter from "./AnalyticsDateFilter";
 import CustomDateRangePicker from "./CustomDateRangePicker";
 import AnalyticsRefreshButton from "./AnalyticsRefreshButton";
+import AppointmentStatusChart from "./AppointmentStatusChart";
+import MedicalRecordStatusChart from "./MedicalRecordStatusChart";
 
 import { useAnalyticsDateRange } from "../hooks";
 
@@ -58,7 +60,11 @@ export default function AnalyticsClient() {
         <>
           <AnalyticsStats dateRange={dateRange} />
 
-          <PatientAnalyticsChart dateRange={dateRange} />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <PatientAnalyticsChart dateRange={dateRange} />
+            <AppointmentStatusChart dateRange={dateRange} />
+            <MedicalRecordStatusChart dateRange={dateRange} />
+          </div>
         </>
       ) : (
         <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900">

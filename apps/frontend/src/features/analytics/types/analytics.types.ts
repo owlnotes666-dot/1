@@ -21,3 +21,13 @@ export interface AnalyticsDateRange {
   startDate: string;
   endDate: string;
 }
+
+export interface AppointmentStatusData {
+  status: "Scheduled" | "Completed" | "Cancelled";
+  total: number;
+}
+
+export interface MedicalRecordStatusData {
+  status: "Pending" | "Reviewed" | "Completed";
+  total: number;
+}
