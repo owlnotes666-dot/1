@@ -1,16 +1,15 @@
 import { Metadata } from "next";
 
+import KnowledgeBaseClient from "@/features/knowledge-base/components/KnowledgeBaseClient";
+
 export const metadata: Metadata = {
   title: "Knowledge Base | Medical Dashboard",
-  description:
-    "Knowledge Base",
+  description: "Knowledge Base",
   // other metadata
 };
 
-function KnowledgeBase() {
-  return (
-    <div>KnowledgeBase</div>
-  )
+function KnowledgeBasePage() {
+  return <KnowledgeBaseClient />;
 }
 
-export default KnowledgeBase
+export default KnowledgeBasePage;
