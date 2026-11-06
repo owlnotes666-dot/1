@@ -35,8 +35,8 @@ export default function KnowledgeBaseClient() {
   if (isAdminLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-10 w-64 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-        <div className="h-40 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        <div className="h-10 w-64 animate-pulse rounded-lg bg-slate-200 dark:bg-gray-800" />
+        <div className="h-40 animate-pulse rounded-2xl bg-slate-200 dark:bg-gray-800" />
       </div>
     );
   }
@@ -50,7 +50,7 @@ export default function KnowledgeBaseClient() {
             Knowledge Base
           </h1>
 
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
             Explore medical articles, clinical guidelines and healthcare
             resources.
           </p>

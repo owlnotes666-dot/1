@@ -97,18 +97,18 @@ export default function AddKnowledgeArticleModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-gray-800">
           <div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
               Add Knowledge Article
             </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
               Create a new medical knowledge article.
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function AddKnowledgeArticleModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-gray-800"
           >
             ✕
           </button>
@@ -125,13 +125,13 @@ export default function AddKnowledgeArticleModal({
         <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto p-6">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Article Title *
               </label>
               <input
                 {...register("title")}
                 placeholder="Enter article title"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               {errors.title && (
                 <p className="mt-1 text-xs text-red-500">
@@ -141,14 +141,14 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Summary *
               </label>
               <textarea
                 {...register("summary")}
                 rows={3}
                 placeholder="Write a short article summary..."
-                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               {errors.summary && (
                 <p className="mt-1 text-xs text-red-500">
@@ -158,14 +158,14 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Article Content *
               </label>
               <textarea
                 {...register("content")}
                 rows={8}
                 placeholder="Write the full article content..."
-                className="w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               {errors.content && (
                 <p className="mt-1 text-xs text-red-500">
@@ -175,12 +175,12 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Category *
               </label>
               <select
                 {...register("category_id")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
                 <option value="">Select category</option>
                 {categories.map((category) => (
@@ -197,7 +197,7 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Reading Time (minutes) *
               </label>
               <input
@@ -205,7 +205,7 @@ export default function AddKnowledgeArticleModal({
                 {...register("read_time_minutes", { valueAsNumber: true })}
                 min={1}
                 max={120}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               {errors.read_time_minutes && (
                 <p className="mt-1 text-xs text-red-500">
@@ -215,13 +215,13 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Cover Image URL
               </label>
               <input
                 {...register("cover_image_url")}
                 placeholder="https://example.com/image.jpg"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               {errors.cover_image_url && (
                 <p className="mt-1 text-xs text-red-500">
@@ -231,14 +231,14 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Tags
               </label>
               <input
                 value={tags.join(", ")}
                 onChange={(event) => handleTagsChange(event.target.value)}
                 placeholder="Cardiology, Heart Health, Prevention"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               <p className="mt-1 text-xs text-slate-400">
                 Separate tags with commas.
@@ -246,12 +246,12 @@ export default function AddKnowledgeArticleModal({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-gray-300">
                 Publication Status
               </label>
               <select
                 {...register("status")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
                 <option value="Draft">Draft</option>
                 <option value="Published">Published</option>
@@ -265,12 +265,12 @@ export default function AddKnowledgeArticleModal({
             </p>
           )}
 
-          <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-5 dark:border-slate-700">
+          <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-5 dark:border-gray-800">
             <button
               type="button"
               onClick={onClose}
               disabled={createArticle.isPending}
-              className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Cancel
             </button>

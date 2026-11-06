@@ -31,14 +31,14 @@ export default function DeleteKnowledgeArticleModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !deleteArticle.isPending) {
           onClose();
         }
       }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
         <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl text-red-600 dark:bg-red-950">
           !
         </div>
@@ -47,7 +47,7 @@ export default function DeleteKnowledgeArticleModal({
           Delete Article
         </h2>
 
-        <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-gray-400">
           Are you sure you want to delete{" "}
           <span className="font-semibold text-slate-800 dark:text-white">
             {article.title}
@@ -66,7 +66,7 @@ export default function DeleteKnowledgeArticleModal({
             type="button"
             onClick={onClose}
             disabled={deleteArticle.isPending}
-            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Cancel
           </button>

@@ -56,7 +56,7 @@ export default function KnowledgeArticlesList({
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="h-96 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"
+            className="h-96 animate-pulse rounded-2xl bg-slate-200 dark:bg-gray-800"
           />
         ))}
       </div>
@@ -89,17 +89,17 @@ export default function KnowledgeArticlesList({
           Knowledge Articles
         </h2>
 
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+        <span className="text-sm text-slate-500 dark:text-gray-400">
           {filteredArticles.length} articles found
         </span>
       </div>
 
       {filteredArticles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-base font-medium text-slate-700 dark:text-slate-200">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-base font-medium text-slate-700 dark:text-gray-200">
             No articles found
           </p>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-sm text-slate-500 dark:text-gray-400">
             Try changing your search or filters.
           </p>
         </div>

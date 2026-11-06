@@ -17,9 +17,9 @@ export default function KnowledgeArticleCard({
   onDelete,
 }: KnowledgeArticleCardProps) {
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
       {article.cover_image_url ? (
-        <div className="h-44 overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <div className="h-44 overflow-hidden bg-slate-100 dark:bg-gray-800">
           <img
             src={article.cover_image_url}
             alt={article.title}
@@ -27,7 +27,7 @@ export default function KnowledgeArticleCard({
           />
         </div>
       ) : (
-        <div className="flex h-44 items-center justify-center bg-gradient-to-br from-teal-50 to-slate-100 dark:from-teal-950 dark:to-slate-800">
+        <div className="flex h-44 items-center justify-center bg-gradient-to-br from-teal-50 to-slate-100 dark:from-teal-950 dark:to-gray-800">
           <span className="text-4xl text-teal-600">✚</span>
         </div>
       )}
@@ -53,7 +53,7 @@ export default function KnowledgeArticleCard({
           {article.title}
         </h3>
 
-        <p className="mb-4 line-clamp-3 flex-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+        <p className="mb-4 line-clamp-3 flex-1 text-sm leading-6 text-slate-500 dark:text-gray-400">
           {article.summary || "No summary available."}
         </p>
 
@@ -73,7 +73,7 @@ export default function KnowledgeArticleCard({
             {article.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-gray-800 dark:text-gray-300"
               >
                 #{tag}
               </span>
@@ -81,7 +81,7 @@ export default function KnowledgeArticleCard({
           </div>
         )}
 
-        <div className="mt-auto flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="mt-auto flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-gray-800">
           <button
             type="button"
             onClick={() => onView(article)}
@@ -94,7 +94,7 @@ export default function KnowledgeArticleCard({
             <button
               type="button"
               onClick={() => onEdit(article)}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Edit
             </button>

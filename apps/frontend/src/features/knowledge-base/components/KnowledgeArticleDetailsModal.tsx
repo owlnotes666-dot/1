@@ -34,7 +34,7 @@ export default function KnowledgeArticleDetailsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -43,9 +43,9 @@ export default function KnowledgeArticleDetailsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="article-title"
-        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-gray-800">
           <span className="text-sm font-medium text-teal-600 dark:text-teal-400">
             {article.category?.name ?? "Knowledge Base"}
           </span>
@@ -54,7 +54,7 @@ export default function KnowledgeArticleDetailsModal({
             type="button"
             onClick={onClose}
             aria-label="Close article"
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
+            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-gray-800 dark:hover:text-white"
           >
             ✕
           </button>
@@ -70,7 +70,7 @@ export default function KnowledgeArticleDetailsModal({
           )}
 
           <div className="p-6 sm:p-8">
-            <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-gray-400">
               <span>{article.read_time_minutes} min read</span>
               <span>•</span>
               <span>
@@ -90,17 +90,17 @@ export default function KnowledgeArticleDetailsModal({
             </h2>
 
             {article.summary && (
-              <p className="mb-6 border-l-4 border-teal-500 pl-4 text-base leading-7 text-slate-600 dark:text-slate-300">
+              <p className="mb-6 border-l-4 border-teal-500 pl-4 text-base leading-7 text-slate-600 dark:text-gray-300">
                 {article.summary}
               </p>
             )}
 
-            <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700 dark:text-slate-300 sm:text-base">
+            <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700 dark:text-gray-300 sm:text-base">
               {article.content}
             </div>
 
             {article.tags.length > 0 && (
-              <div className="mt-8 flex flex-wrap gap-2 border-t border-slate-200 pt-6 dark:border-slate-700">
+              <div className="mt-8 flex flex-wrap gap-2 border-t border-slate-200 pt-6 dark:border-gray-800">
                 {article.tags.map((tag) => (
                   <span
                     key={tag}
@@ -114,7 +114,7 @@ export default function KnowledgeArticleDetailsModal({
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-200 px-6 py-4 dark:border-slate-700">
+        <div className="flex justify-end border-t border-slate-200 px-6 py-4 dark:border-gray-800">
           <button
             type="button"
             onClick={onClose}
