@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { motion, type Variants } from "framer-motion";
 
-import { DataTablePagination } from "@/shared/components/data-table";
 import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
 import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 import AppointmentStats from "./AppointmentStats";

@@ -1,14 +1,12 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
+
+import AnalyticsClient from "@/features/analytics/components/AnalyticsClient";
 
 export const metadata: Metadata = {
   title: "Analytics | Medical Dashboard",
-  description:
-    "Analytics",
-  // other metadata
+  description: "Healthcare analytics and reports",
 };
 
-function Analytics() {
-  return <div>Analytics</div>;
+export default function AnalyticsPage() {
+  return <AnalyticsClient />;
 }
-
-export default Analytics;
