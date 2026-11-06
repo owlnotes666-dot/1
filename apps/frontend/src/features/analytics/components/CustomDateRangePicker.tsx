@@ -5,6 +5,7 @@ interface CustomDateRangePickerProps {
   endDate: string;
   onStartDateChange: (date: string) => void;
   onEndDateChange: (date: string) => void;
+  error: string | null;
 }
 
 export default function CustomDateRangePicker({
@@ -12,6 +13,7 @@ export default function CustomDateRangePicker({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  error,
 }: CustomDateRangePickerProps) {
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
@@ -43,6 +45,9 @@ export default function CustomDateRangePicker({
           className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#0F9D91] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>
+      {error && (
+        <p className="w-full text-sm font-medium text-red-500">{error}</p>
+      )}
     </div>
   );
 }

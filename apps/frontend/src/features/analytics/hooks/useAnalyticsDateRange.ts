@@ -12,6 +12,26 @@ const formatLocalDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const parseDate = (value: string): Date | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
 const getDateRange = (
   period: AnalyticsPeriod,
   customStartDate: string,
@@ -21,15 +41,10 @@ const getDateRange = (
   const startDate = new Date(endDate);
 
   if (period === "custom") {
-    const validStartDate =
-      /^\d{4}-\d{2}-\d{2}$/.test(customStartDate) &&
-      !Number.isNaN(new Date(`${customStartDate}T00:00:00`).getTime());
+    const customStart = parseDate(customStartDate);
+    const customEnd = parseDate(customEndDate);
 
-    const validEndDate =
-      /^\d{4}-\d{2}-\d{2}$/.test(customEndDate) &&
-      !Number.isNaN(new Date(`${customEndDate}T00:00:00`).getTime());
-
-    if (!validStartDate || !validEndDate) {
+    if (!customStart || !customEnd || customStart > customEnd) {
       startDate.setDate(startDate.getDate() - 29);
 
       return {
@@ -39,13 +54,8 @@ const getDateRange = (
       };
     }
 
-    const customStart = new Date(
-      `${customStartDate}T00:00:00`,
-    );
-
-    const customEnd = new Date(
-      `${customEndDate}T23:59:59.999`,
-    );
+    customStart.setHours(0, 0, 0, 0);
+    customEnd.setHours(23, 59, 59, 999);
 
     return {
       period,
@@ -97,9 +107,34 @@ export const useAnalyticsDateRange = () => {
     formatLocalDate(new Date()),
   );
 
+  const dateRangeError = useMemo(() => {
+    if (period !== "custom") return null;
+
+    const start = parseDate(customStartDate);
+    const end = parseDate(customEndDate);
+    const today = parseDate(formatLocalDate(new Date()));
+
+    if (!customStartDate || !customEndDate) {
+      return "Please select both start and end dates.";
+    }
+
+    if (!start || !end) {
+      return "Please enter valid dates.";
+    }
+
+    if (start > end) {
+      return "Start date cannot be after end date.";
+    }
+
+    if (start > today! || end > today!) {
+      return "Future dates are not allowed.";
+    }
+
+    return null;
+  }, [period, customStartDate, customEndDate]);
+
   const dateRange = useMemo(
-    () =>
-      getDateRange(period, customStartDate, customEndDate),
+    () => getDateRange(period, customStartDate, customEndDate),
     [period, customStartDate, customEndDate],
   );
 
@@ -111,5 +146,7 @@ export const useAnalyticsDateRange = () => {
     setCustomStartDate,
     customEndDate,
     setCustomEndDate,
+    dateRangeError,
+    isCustomRangeValid: !dateRangeError,
   };
 };
