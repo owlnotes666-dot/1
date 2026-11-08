@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,6 +11,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        
     )
 
     app_name: str = "Medical Dashboard AI"
@@ -20,6 +22,7 @@ class Settings(BaseSettings):
 
     hf_token: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None
+    ai_provider: Literal["huggingface", "openrouter"] = "huggingface"
 
 
 @lru_cache
