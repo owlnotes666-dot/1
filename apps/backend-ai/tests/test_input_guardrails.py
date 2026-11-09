@@ -1,6 +1,6 @@
 import pytest
 
-from app.features.ai_assistant.services.input_guardrails import (
+from app.features.ai_assistant.services.guardrails.input_guardrails import (
     inspect_user_input,
 )
 

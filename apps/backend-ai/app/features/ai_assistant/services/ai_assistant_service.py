@@ -24,6 +24,10 @@ from app.features.ai_assistant.services.guardrails import (
     check_ai_response,
 )
 
+from app.features.ai_assistant.services.guardrails.pii_guardrails import (
+    inspect_pii,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +51,6 @@ class AIAssistantService:
                 user_id=user_id,
                 ip_address=ip_address,
             )
-
 
         if not input_check.is_allowed:
             audit_security_event(
@@ -87,6 +90,18 @@ class AIAssistantService:
                 model="guardrails",
             )
 
+            # Detect and redact personally identifiable information
+        pii_check = inspect_pii(request.message)
+
+        if pii_check.contains_pii:
+            audit_security_event(
+                event_name="pii_detected_and_redacted",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+        safe_user_message = pii_check.redacted_content
+
         messages = [
             ProviderMessage(
                 role="system",
@@ -94,7 +109,7 @@ class AIAssistantService:
             ),
             ProviderMessage(
                 role="user",
-                content=request.message,
+                content=safe_user_message,
             ),
         ]
 

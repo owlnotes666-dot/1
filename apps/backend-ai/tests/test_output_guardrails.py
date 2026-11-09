@@ -1,6 +1,6 @@
 import pytest
 
-from app.features.ai_assistant.services.output_guardrails import (
+from app.features.ai_assistant.services.guardrails.output_guardrails import (
     inspect_ai_output,
 )
 

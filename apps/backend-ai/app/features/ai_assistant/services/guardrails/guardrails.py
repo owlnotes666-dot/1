@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 
-from app.features.ai_assistant.services.input_guardrails import (
+from app.features.ai_assistant.services.guardrails.input_guardrails import (
     inspect_user_input,
 )
 from app.features.ai_assistant.services.emergency_detection import (
     detect_medical_emergency,
 )
-from app.features.ai_assistant.services.output_guardrails import (
+from app.features.ai_assistant.services.guardrails.output_guardrails import (
     inspect_ai_output,
 )
 

@@ -9,7 +9,7 @@ from app.features.ai_assistant.services.ai_assistant_service import (
     AIAssistantService,
 )
 
-from app.features.ai_assistant.services.guardrails import GuardrailCheckResult
+from app.features.ai_assistant.services.guardrails.guardrails import GuardrailCheckResult
 
 from app.core.providers.exceptions import (
     ProviderAuthenticationError,
@@ -216,3 +216,37 @@ async def test_unexpected_provider_error_is_handled_safely(
     assert "internal sensitive error" not in response.message.lower()
 
     mock_provider.generate.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_pii_is_redacted_before_sending_to_ai_provider(
+    service,
+    mock_provider,
+):
+    sensitive_message = (
+        "Please explain my medical report. "
+        "My email is patient@example.com "
+        "and my patient ID is PT-12345."
+    )
+
+    request = ChatRequest(message=sensitive_message)
+
+    response = await service.generate_response(request)
+
+    mock_provider.generate.assert_awaited_once()
+
+    sent_messages = mock_provider.generate.await_args.kwargs["messages"]
+
+    sent_user_message = next(
+        message.content
+        for message in sent_messages
+        if message.role == "user"
+    )
+
+    assert "patient@example.com" not in sent_user_message
+    assert "PT-12345" not in sent_user_message
+
+    assert "[REDACTED_EMAIL]" in sent_user_message
+    assert "[REDACTED_PATIENT_ID]" in sent_user_message
+
+    assert response.provider == "openrouter"
