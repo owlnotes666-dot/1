@@ -11,8 +11,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
-        
-        
+
+
     )
 
     app_name: str = "Medical Dashboard AI"
@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     frontend_origin: str = "http://localhost:3000"
+
+    supabase_url: str
+    supabase_anon_key: SecretStr
 
     hf_token: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None

@@ -11,6 +11,8 @@ python-dotenv = "*"
 huggingface-hub = "*"
 openai = "*"
 pandas = "*"
+supabase = "*"
+gotrue = "*"
 
 [dev-packages]
 pytest = "*"
