@@ -1,7 +1,16 @@
+from uuid import UUID
+import logging
+
 from app.core.config import settings
-from app.core.providers import (
-    ProviderMessage,
-    get_ai_provider,
+from app.core.providers import ProviderMessage, get_ai_provider
+from app.core.providers.exceptions import (
+    ProviderAuthenticationError,
+    ProviderConnectionError,
+    ProviderError,
+    ProviderRateLimitError,
+    ProviderResponseError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
 )
 from app.features.ai_assistant.prompts.system import SYSTEM_PROMPT
 from app.features.ai_assistant.schemas.chat import (
@@ -15,8 +24,10 @@ from app.features.ai_assistant.services.guardrails import (
 )
 
 
-class AIAssistantService:
+logger = logging.getLogger(__name__)
 
+
+class AIAssistantService:
     def __init__(self) -> None:
         self.provider = get_ai_provider()
 
@@ -25,13 +36,11 @@ class AIAssistantService:
         request: ChatRequest,
     ) -> ChatResponse:
 
-        # 1. Check user input
         input_check = check_user_message(request.message)
 
         if not input_check.is_allowed:
             raise ValueError("Invalid user message.")
 
-        # 2. Handle emergency situations
         if input_check.is_emergency:
             return ChatResponse(
                 conversation_id=request.conversation_id,
@@ -45,7 +54,6 @@ class AIAssistantService:
                 model="emergency-response",
             )
 
-        # 3. Handle suspected prompt injection
         if input_check.prompt_injection_suspected:
             return ChatResponse(
                 conversation_id=request.conversation_id,
@@ -58,7 +66,6 @@ class AIAssistantService:
                 model="guardrails",
             )
 
-        # 4. Prepare model messages
         messages = [
             ProviderMessage(
                 role="system",
@@ -70,18 +77,73 @@ class AIAssistantService:
             ),
         ]
 
-        # 5. Call AI provider
-        provider_response = await self.provider.generate(
-            messages=messages,
-            model=settings.ai_model,
-            max_tokens=1024,
-            temperature=0.2,
-        )
+        try:
+            provider_response = await self.provider.generate(
+                messages=messages,
+                model=settings.ai_model,
+                max_tokens=1024,
+                temperature=0.2,
+            )
 
-        # 6. Inspect AI output
-        output_check = check_ai_response(
-            provider_response.content
-        )
+        except ProviderAuthenticationError:
+            return self._provider_error_response(
+                "The AI service is temporarily unavailable.",
+                "provider-authentication-error",
+                request.conversation_id
+            )
+
+        except ProviderRateLimitError:
+            return self._provider_error_response(
+                "The AI service is currently busy. Please try again later.",
+                "provider-rate-limit",
+                request.conversation_id
+            )
+
+        except ProviderTimeoutError:
+            return self._provider_error_response(
+                "The AI service took too long to respond. Please try again.",
+                "provider-timeout",
+                request.conversation_id
+            )
+
+        except ProviderConnectionError:
+            return self._provider_error_response(
+                "Unable to connect to the AI service. Please try again later.",
+                "provider-connection-error",
+                request.conversation_id
+            )
+
+        except ProviderUnavailableError:
+            return self._provider_error_response(
+                "The AI service is temporarily unavailable. Please try again later.",
+                "provider-unavailable",
+                request.conversation_id
+            )
+
+        except ProviderResponseError:
+            return self._provider_error_response(
+                "The AI service returned an invalid response. Please try again.",
+                "provider-response-error",
+                request.conversation_id
+            )
+
+        except ProviderError:
+            return self._provider_error_response(
+                "Something went wrong with the AI service. Please try again later.",
+                "provider-error",
+                request.conversation_id
+            )
+        except Exception:
+            logger.error(
+                "Unexpected error occurred during AI provider request."
+            )
+
+            return self._provider_error_response(
+                "Something went wrong. Please try again later.",
+                "unexpected-provider-error",
+                request.conversation_id,
+            )
+        output_check = check_ai_response(provider_response.content)
 
         if not output_check.is_safe:
             return ChatResponse(
@@ -95,7 +157,6 @@ class AIAssistantService:
                 model="output-guardrails",
             )
 
-        # 7. Prepare usage information
         usage = None
 
         if provider_response.usage:
@@ -111,11 +172,23 @@ class AIAssistantService:
                 ),
             )
 
-        # 8. Return final response
         return ChatResponse(
             conversation_id=request.conversation_id,
             message=output_check.content,
             provider=settings.ai_provider,
             model=provider_response.model,
             usage=usage,
+        )
+
+    @staticmethod
+    def _provider_error_response(
+        message: str,
+        error_code: str,
+        conversation_id: UUID | None = None,
+    ) -> ChatResponse:
+        return ChatResponse(
+            conversation_id=conversation_id,
+            message=message,
+            provider="system",
+            model=error_code,
         )

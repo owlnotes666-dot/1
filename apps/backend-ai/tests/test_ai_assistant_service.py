@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+
 from app.core.providers.base import ProviderResponse
 from app.features.ai_assistant.schemas.chat import ChatRequest
 from app.features.ai_assistant.services.ai_assistant_service import (
@@ -9,6 +10,16 @@ from app.features.ai_assistant.services.ai_assistant_service import (
 )
 
 from app.features.ai_assistant.services.guardrails import GuardrailCheckResult
+
+from app.core.providers.exceptions import (
+    ProviderAuthenticationError,
+    ProviderConnectionError,
+    ProviderRateLimitError,
+    ProviderResponseError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+    ProviderError,
+)
 
 
 @pytest.fixture
@@ -133,3 +144,75 @@ async def test_invalid_input_is_rejected(
             await service.generate_response(request)
 
     mock_provider.generate.assert_not_awaited()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "provider_error, expected_model",
+    [
+        (ProviderAuthenticationError("Unauthorized"),
+         "provider-authentication-error"),
+        (ProviderRateLimitError("Rate limit"), "provider-rate-limit"),
+        (ProviderTimeoutError("Timeout"), "provider-timeout"),
+        (ProviderConnectionError("Connection failed"), "provider-connection-error"),
+        (ProviderUnavailableError("Unavailable"), "provider-unavailable"),
+        (ProviderResponseError("Invalid response"), "provider-response-error"),
+        (ProviderError("Unknown provider error"), "provider-error"),
+    ],
+)
+async def test_provider_errors_are_handled_safely(
+    service,
+    mock_provider,
+    provider_error,
+    expected_model,
+):
+    from uuid import uuid4
+
+    conversation_id = uuid4()
+
+    mock_provider.generate.side_effect = provider_error
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard.",
+        conversation_id=conversation_id,
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "system"
+    assert response.model == expected_model
+    assert response.conversation_id == conversation_id
+
+    assert "openrouter" not in response.message.lower()
+    assert "api key" not in response.message.lower()
+
+    mock_provider.generate.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_unexpected_provider_error_is_handled_safely(
+    service,
+    mock_provider,
+):
+    from uuid import uuid4
+
+    conversation_id = uuid4()
+
+    mock_provider.generate.side_effect = RuntimeError(
+        "Internal sensitive error"
+    )
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard.",
+        conversation_id=conversation_id,
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "system"
+    assert response.model == "unexpected-provider-error"
+    assert response.conversation_id == conversation_id
+
+    assert "internal sensitive error" not in response.message.lower()
+
+    mock_provider.generate.assert_awaited_once()
