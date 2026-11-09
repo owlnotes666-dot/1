@@ -2,6 +2,7 @@ from uuid import UUID
 import logging
 
 from app.core.config import settings
+from app.core.security_audit import audit_security_event
 from app.core.providers import ProviderMessage, get_ai_provider
 from app.core.providers.exceptions import (
     ProviderAuthenticationError,
@@ -34,14 +35,34 @@ class AIAssistantService:
     async def generate_response(
         self,
         request: ChatRequest,
+        user_id: UUID | None = None,
+        ip_address: str | None = None,
     ) -> ChatResponse:
 
         input_check = check_user_message(request.message)
 
+        if input_check.prompt_injection_suspected:
+            audit_security_event(
+                event_name="prompt_injection_detected",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+
         if not input_check.is_allowed:
+            audit_security_event(
+                event_name="invalid_input_rejected",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
             raise ValueError("Invalid user message.")
 
         if input_check.is_emergency:
+            audit_security_event(
+                event_name="emergency_detected",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
             return ChatResponse(
                 conversation_id=request.conversation_id,
                 message=(
@@ -146,6 +167,11 @@ class AIAssistantService:
         output_check = check_ai_response(provider_response.content)
 
         if not output_check.is_safe:
+            audit_security_event(
+                event_name="output_guardrail_blocked",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
             return ChatResponse(
                 conversation_id=request.conversation_id,
                 message=(

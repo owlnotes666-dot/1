@@ -13,6 +13,7 @@ openai = "*"
 pandas = "*"
 supabase = "*"
 gotrue = "*"
+slowapi = "*"
 
 [dev-packages]
 pytest = "*"
