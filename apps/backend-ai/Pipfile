@@ -10,11 +10,14 @@ pydantic-settings = "*"
 python-dotenv = "*"
 huggingface-hub = "*"
 openai = "*"
+pandas = "*"
 
 [dev-packages]
 pytest = "*"
 httpx = "*"
 ruff = "*"
+jupyterlab = "*"
+ipykernel = "*"
 
 [requires]
 python_version = "3.12"
