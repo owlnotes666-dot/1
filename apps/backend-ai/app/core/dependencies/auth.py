@@ -1,13 +1,13 @@
-
 import logging
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase_auth.errors import AuthApiError
 from pydantic import BaseModel
 
 from app.core.supabase import get_supabase_client
+from app.core.security_audit import audit_security_event
 
 
 logger = logging.getLogger(__name__)
@@ -21,12 +21,22 @@ class AuthenticatedUser(BaseModel):
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(
         bearer_scheme
     ),
 ) -> AuthenticatedUser:
 
+    ip_address = (
+        request.client.host if request.client else None
+    )
+
     if credentials is None:
+        audit_security_event(
+            event_name="authentication_failed",
+            ip_address=ip_address,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required.",
@@ -34,6 +44,11 @@ def get_current_user(
         )
 
     if credentials.scheme.lower() != "bearer":
+        audit_security_event(
+            event_name="authentication_failed",
+            ip_address=ip_address,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication scheme.",
@@ -50,6 +65,11 @@ def get_current_user(
         user = response.user
 
         if user is None:
+            audit_security_event(
+                event_name="authentication_failed",
+                ip_address=ip_address,
+            )
+
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired access token.",
@@ -62,6 +82,11 @@ def get_current_user(
         )
 
     except AuthApiError:
+        audit_security_event(
+            event_name="authentication_failed",
+            ip_address=ip_address,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired access token.",
