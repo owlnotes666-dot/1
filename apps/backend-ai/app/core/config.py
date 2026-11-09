@@ -12,6 +12,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         
+        
     )
 
     app_name: str = "Medical Dashboard AI"
@@ -22,7 +23,8 @@ class Settings(BaseSettings):
 
     hf_token: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None
-    ai_provider: Literal["huggingface", "openrouter"] = "huggingface"
+    ai_provider: Literal["huggingface", "openrouter"] = "openrouter"
+    ai_model: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
 
 
 @lru_cache
