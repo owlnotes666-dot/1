@@ -28,6 +28,11 @@ from app.features.ai_assistant.services.guardrails.pii_guardrails import (
     inspect_pii,
 )
 
+from app.features.ai_assistant.services.guardrails.prompt_injection_detector import (
+    detect_prompt_injection,
+    PromptInjectionClassificationError,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +107,47 @@ class AIAssistantService:
 
         safe_user_message = pii_check.redacted_content
 
+        try:
+            injection_detected = await detect_prompt_injection(
+                message=safe_user_message,
+                provider=self.provider,
+            )
+
+        except Exception:
+            logger.error(
+                "Prompt injection classification failed."
+            )
+
+            audit_security_event(
+                event_name="prompt_injection_classification_failed",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+            return self._provider_error_response(
+                "The AI security check is temporarily unavailable. "
+                "Please try again later.",
+                "prompt-injection-classifier-unavailable",
+                request.conversation_id,
+            )
+
+        if injection_detected:
+            audit_security_event(
+                event_name="prompt_injection_detected_by_llm",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+            return ChatResponse(
+                conversation_id=request.conversation_id,
+                message=(
+                    "I cannot follow instructions that attempt to "
+                    "override my safety guidelines. I can help with "
+                    "general medical information."
+                ),
+                provider="system",
+                model="llm-prompt-injection-guardrails",
+            )
         messages = [
             ProviderMessage(
                 role="system",
