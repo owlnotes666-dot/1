@@ -1,11 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
 from app.core.rate_limit import limiter
 from app.core.config import settings
 from app.features.ai_assistant.api.routes import router as ai_assistant_router
+from app.core.security_audit import audit_security_event
 
 
 app = FastAPI(
@@ -16,11 +17,32 @@ app = FastAPI(
 
 app.state.limiter = limiter
 
+
+async def rate_limit_exceeded_handler(
+    request: Request,
+    exc: RateLimitExceeded,
+):
+    ip_address = (
+        request.client.host if request.client else None
+    )
+
+    audit_security_event(
+        event_name="rate_limit_exceeded",
+        ip_address=ip_address,
+    )
+
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Rate limit exceeded. Please try again later."
+        },
+    )
+
+
 app.add_exception_handler(
     RateLimitExceeded,
-    _rate_limit_exceeded_handler,
+    rate_limit_exceeded_handler,
 )
-
 
 app.add_middleware(
     CORSMiddleware,

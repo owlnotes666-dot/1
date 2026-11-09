@@ -1,4 +1,5 @@
 from uuid import uuid4
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -125,3 +126,39 @@ def test_chat_rate_limit(client):
     )
 
     assert responses[10].status_code == 429
+
+
+def test_rate_limit_exceeded_is_audited(client):
+    user = AuthenticatedUser(
+        id=uuid4(),
+        email="demo@example.com",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    with patch(
+        "app.main.audit_security_event"
+    ) as mock_audit:
+
+        with TestClient(
+            app,
+            client=("198.51.100.30", 12345),
+        ) as rate_limit_client:
+
+            responses = []
+
+            for _ in range(11):
+                response = rate_limit_client.post(
+                    "/api/v1/ai-assistant/chat",
+                    json={
+                        "message": "What is a medical dashboard?"
+                    },
+                )
+                responses.append(response)
+
+    assert responses[10].status_code == 429
+
+    mock_audit.assert_called_once_with(
+        event_name="rate_limit_exceeded",
+        ip_address="198.51.100.30",
+    )
