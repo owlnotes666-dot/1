@@ -25,6 +25,10 @@ from app.features.ai_assistant.services.guardrails.prompt_injection_detector imp
     detect_prompt_injection,
 )
 
+from app.features.ai_assistant.services.guardrails.output_safety_detector import (
+    detect_unsafe_output,
+)
+
 
 @pytest.fixture
 def mock_provider():
@@ -45,11 +49,17 @@ def mock_provider():
 
 @pytest.fixture
 def service(mock_provider, monkeypatch):
-    mock_detector = AsyncMock(return_value=False)
+    mock_injection_detector = AsyncMock(return_value=False)
+    mock_output_detector = AsyncMock(return_value=False)
 
     monkeypatch.setattr(
         "app.features.ai_assistant.services.ai_assistant_service.detect_prompt_injection",
-        mock_detector,
+        mock_injection_detector,
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_unsafe_output",
+        mock_output_detector,
     )
 
     with patch(
@@ -374,3 +384,87 @@ async def test_pii_is_redacted_before_prompt_injection_classification(
 
     assert "[REDACTED_EMAIL]" in classified_message
     assert "[REDACTED_PATIENT_ID]" in classified_message
+
+
+@pytest.mark.anyio
+async def test_llm_output_safety_blocks_unsafe_response(
+    service,
+    mock_provider,
+    monkeypatch,
+):
+    mock_detector = AsyncMock(return_value=True)
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_unsafe_output",
+        mock_detector,
+    )
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard."
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "system"
+    assert response.model == "llm-output-safety-guardrails"
+    assert "unable to provide" in response.message.lower()
+
+    mock_detector.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_output_safety_classifier_failure_blocks_response(
+    service,
+    mock_provider,
+    monkeypatch,
+):
+    mock_detector = AsyncMock(
+        side_effect=RuntimeError("Classifier unavailable")
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_unsafe_output",
+        mock_detector,
+    )
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard."
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "system"
+    assert response.model == "output-safety-classifier-unavailable"
+
+    assert "safety check" in response.message.lower()
+
+    mock_detector.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_safe_output_passes_llm_safety_check(
+    service,
+    mock_provider,
+    monkeypatch,
+):
+    mock_detector = AsyncMock(return_value=False)
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_unsafe_output",
+        mock_detector,
+    )
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard."
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "openrouter"
+    assert response.model == "nvidia/nemotron-test"
+
+    assert response.message == (
+        "A medical dashboard organizes clinical information."
+    )
+
+    mock_detector.assert_awaited_once()

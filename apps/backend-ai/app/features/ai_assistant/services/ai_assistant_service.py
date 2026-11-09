@@ -33,6 +33,9 @@ from app.features.ai_assistant.services.guardrails.prompt_injection_detector imp
     PromptInjectionClassificationError,
 )
 
+from app.features.ai_assistant.services.guardrails.output_safety_detector import (
+    detect_unsafe_output,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +228,7 @@ class AIAssistantService:
                 "unexpected-provider-error",
                 request.conversation_id,
             )
+
         output_check = check_ai_response(provider_response.content)
 
         if not output_check.is_safe:
@@ -233,6 +237,7 @@ class AIAssistantService:
                 user_id=user_id,
                 ip_address=ip_address,
             )
+
             return ChatResponse(
                 conversation_id=request.conversation_id,
                 message=(
@@ -242,6 +247,48 @@ class AIAssistantService:
                 ),
                 provider="system",
                 model="output-guardrails",
+            )
+
+        try:
+            unsafe_output_detected = await detect_unsafe_output(
+                content=output_check.content,
+                provider=self.provider,
+            )
+
+        except Exception:
+            logger.error(
+                "Output safety classification failed."
+            )
+
+            audit_security_event(
+                event_name="output_safety_classification_failed",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+            return self._provider_error_response(
+                "The AI safety check is temporarily unavailable. "
+                "Please try again later.",
+                "output-safety-classifier-unavailable",
+                request.conversation_id,
+            )
+
+        if unsafe_output_detected:
+            audit_security_event(
+                event_name="llm_output_safety_blocked",
+                user_id=user_id,
+                ip_address=ip_address,
+            )
+
+            return ChatResponse(
+                conversation_id=request.conversation_id,
+                message=(
+                    "I’m unable to provide a reliable response "
+                    "to this request. Please consult a qualified "
+                    "healthcare professional when appropriate."
+                ),
+                provider="system",
+                model="llm-output-safety-guardrails",
             )
 
         usage = None
