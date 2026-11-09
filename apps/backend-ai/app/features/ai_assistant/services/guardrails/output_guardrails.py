@@ -1,6 +1,10 @@
 import re
 from dataclasses import dataclass
 
+from app.features.ai_assistant.services.guardrails.pii_guardrails import (
+    inspect_pii,
+)
+
 
 @dataclass
 class OutputGuardrailResult:
@@ -43,6 +47,11 @@ def inspect_ai_output(
     ):
         flags.append("possible_unsafe_prescription")
 
+    pii_result = inspect_pii(normalized_content)
+
+    if pii_result.contains_pii:
+        flags.append("possible_sensitive_data")
+
     if any(
         re.search(pattern, normalized_content, re.IGNORECASE)
         for pattern in SENSITIVE_DATA_PATTERNS
@@ -53,6 +62,6 @@ def inspect_ai_output(
 
     return OutputGuardrailResult(
         is_safe=is_safe,
-        flags=flags,
+        flags=list(set(flags)),
         sanitized_content=normalized_content,
     )

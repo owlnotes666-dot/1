@@ -50,7 +50,9 @@ def test_unsafe_prescription_detection(content):
     "content",
     [
         "Patient ID: ABC12345",
+        "Patient ID is PT-12345",
         "SSN: 123-45-6789",
+        "Contact: patient@example.com",
     ],
 )
 def test_sensitive_data_detection(content):

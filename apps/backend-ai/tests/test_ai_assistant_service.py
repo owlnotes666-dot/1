@@ -250,3 +250,26 @@ async def test_pii_is_redacted_before_sending_to_ai_provider(
     assert "[REDACTED_PATIENT_ID]" in sent_user_message
 
     assert response.provider == "openrouter"
+
+
+@pytest.mark.anyio
+async def test_pii_in_ai_output_returns_safe_fallback(
+    service,
+    mock_provider,
+):
+    mock_provider.generate.return_value = ProviderResponse(
+        content="The patient's email is patient@example.com.",
+        model="nvidia/nemotron-test",
+    )
+
+    request = ChatRequest(
+        message="Explain the purpose of a medical dashboard."
+    )
+
+    response = await service.generate_response(request)
+
+    assert response.provider == "system"
+    assert response.model == "output-guardrails"
+    assert "patient@example.com" not in response.message
+
+    mock_provider.generate.assert_awaited_once()
