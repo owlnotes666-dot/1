@@ -26,8 +26,10 @@ class Settings(BaseSettings):
 
     hf_token: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None
-    ai_provider: Literal["huggingface", "openrouter"] = "openrouter"
+    jina_api_key: SecretStr | None = None
+    ai_provider: Literal["huggingface", "openrouter", "jina"] = "openrouter"
     ai_model: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
+    ai_model_classifier: str = "jina-embeddings-v5-text-small"
 
 
 @lru_cache
