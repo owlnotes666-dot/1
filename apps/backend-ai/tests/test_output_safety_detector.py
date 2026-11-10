@@ -73,5 +73,5 @@ async def test_classifier_uses_expected_generation_settings():
 
     call_kwargs = provider.generate.await_args.kwargs
 
-    assert call_kwargs["max_tokens"] == 10
+    assert call_kwargs["max_tokens"] == 256
     assert call_kwargs["temperature"] == 0.0

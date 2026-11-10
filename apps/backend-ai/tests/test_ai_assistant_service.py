@@ -410,8 +410,8 @@ async def test_llm_output_safety_blocks_unsafe_response(
     assert "unable to provide" in response.message.lower()
 
     mock_detector.assert_awaited_once()
-
-
+    
+    
 @pytest.mark.anyio
 async def test_output_safety_classifier_failure_blocks_response(
     service,
@@ -439,8 +439,8 @@ async def test_output_safety_classifier_failure_blocks_response(
     assert "safety check" in response.message.lower()
 
     mock_detector.assert_awaited_once()
-
-
+    
+    
 @pytest.mark.anyio
 async def test_safe_output_passes_llm_safety_check(
     service,
