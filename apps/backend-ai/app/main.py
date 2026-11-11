@@ -3,11 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from app.core.rate_limit import limiter
 from app.core.config import settings
-from app.features.ai_assistant.api.routes import router as ai_assistant_router
+from app.core.rate_limit import limiter
 from app.core.security_audit import audit_security_event
-
+from app.features.ai_assistant.api.routes import router as ai_assistant_router
 
 app = FastAPI(
     title=settings.app_name,

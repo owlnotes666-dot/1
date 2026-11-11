@@ -19,6 +19,17 @@ from app.features.ai_assistant.schemas.chat import (
 from app.core.rate_limit import limiter
 
 
+from app.core.dependencies.auth import get_current_admin
+
+from app.features.ai_assistant.services.rag.knowledge_ingestion_service import (
+    KnowledgeIngestionService,
+)
+
+from app.features.ai_assistant.api.routes import (
+    get_knowledge_ingestion_service,
+)
+
+
 class FakeAIAssistantService:
     async def generate_response(
         self,
@@ -32,6 +43,16 @@ class FakeAIAssistantService:
             provider="openrouter",
             model="test-model",
         )
+
+
+class FakeKnowledgeIngestionService:
+    async def ingest_article(self, article_id):
+        return {
+            "article_id": str(article_id),
+            "title": "Diabetes Overview",
+            "chunks_created": 3,
+            "status": "indexed",
+        }
 
 
 @pytest.fixture

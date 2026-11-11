@@ -15,6 +15,7 @@ import { useLogin } from "@/features/auth";
 import { signInSchema, SignInSchema } from "@/features/auth";
 import { getSafeRedirectPath } from "@/features/auth/utils/getSafeRedirectPath";
 import { getAuthErrorMessage } from "@/shared/utils/getAuthErrorMessage";
+import { createClient } from "@/lib/supabase/client";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -63,10 +64,27 @@ export default function SignInForm() {
     setAuthError("");
 
     loginMutation.mutate(data, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        const supabase = createClient();
+
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error("Failed to retrieve authentication session.");
+        }
+
+        if (!session?.access_token) {
+          console.error("Authentication session is unavailable.");
+          return;
+        }
+
         const nextPath = new URLSearchParams(window.location.search).get(
           "next",
         );
+
         router.replace(getSafeRedirectPath(nextPath));
       },
 
@@ -173,7 +191,6 @@ export default function SignInForm() {
               onSubmit={handleSubmit(onSubmit)}
             >
               <div className="space-y-6">
-    
                 {authError && (
                   <div className="p-3 text-sm text-red-500 border border-red-200 rounded-md bg-red-50 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50">
                     {authError}
@@ -214,7 +231,7 @@ export default function SignInForm() {
                         {errors.password.message}
                       </p>
                     )}
-          
+
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
