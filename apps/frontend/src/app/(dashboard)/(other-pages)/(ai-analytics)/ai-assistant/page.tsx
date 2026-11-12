@@ -1,16 +1,27 @@
 import { Metadata } from "next";
+import AccessTokenCard from "@/features/ai-assistant/components/developer-tools/access-token-card";
 
 export const metadata: Metadata = {
-  title: "Ai Assistant | Medical Dashboard",
-  description:
-    "Ai Assistant",
-  // other metadata
+  title: "AI Assistant | Medical Dashboard",
+  description: "AI Assistant",
 };
 
 function AiAssistant() {
   return (
-    <div>AiAssistant</div>
-  )
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-[#172B4D] dark:text-white">
+          AI Assistant
+        </h1>
+
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Your intelligent medical assistant.
+        </p>
+      </div>
+
+      <AccessTokenCard />
+    </div>
+  );
 }
 
-export default AiAssistant
+export default AiAssistant;
