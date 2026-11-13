@@ -52,7 +52,7 @@ async def test_admin_can_execute_database_tool(monkeypatch):
         ProviderMessage(role="user", content="How many active patients?")
     ]
 
-    response, usage = await service._generate_with_tools(messages)
+    response, usage, web_sources = await service._generate_with_tools(messages)
 
     assert response.content == "There are 10 active patients."
     assert usage["total_tokens"] == 30
@@ -90,7 +90,7 @@ async def test_demo_cannot_access_database_tools(monkeypatch):
         ProviderMessage(role="user", content="How many active patients?")
     ]
 
-    response, usage = await service._generate_with_tools(messages)
+    response, usage, web_sources = await service._generate_with_tools(messages)
 
     assert response.content == "I can help with general medical knowledge."
     assert usage["total_tokens"] == 18
@@ -98,7 +98,13 @@ async def test_demo_cannot_access_database_tools(monkeypatch):
     provider.generate.assert_awaited_once()
 
     call_kwargs = provider.generate.await_args.kwargs
-    assert call_kwargs["tools"] is None
+    tools = call_kwargs["tools"]
+    tool_names = {
+        tool["function"]["name"]
+        for tool in tools
+    }
+
+    assert tool_names == {"search_web"}
 
 
 @pytest.mark.asyncio
@@ -149,7 +155,7 @@ async def test_multiple_database_tool_calls(monkeypatch):
             role="user", content="Show active patient and doctor counts.")
     ]
 
-    response, _ = await service._generate_with_tools(messages)
+    response, _, _ = await service._generate_with_tools(messages)
 
     assert response.content == (
         "There are 10 active patients and 5 active doctors."
@@ -297,7 +303,7 @@ async def test_tool_execution_error_is_sanitized(monkeypatch):
         ProviderMessage(role="user", content="Get patient statistics.")
     ]
 
-    response, _ = await service._generate_with_tools(messages)
+    response, _, _ = await service._generate_with_tools(messages)
 
     assert response.content == "I couldn't retrieve the requested statistics."
 
@@ -363,7 +369,7 @@ async def test_sequential_tool_calls_across_rounds(monkeypatch):
         )
     ]
 
-    response, _ = await service._generate_with_tools(messages)
+    response, _, _ = await service._generate_with_tools(messages)
 
     assert response.content == (
         "There are 10 active patients and 5 active doctors."

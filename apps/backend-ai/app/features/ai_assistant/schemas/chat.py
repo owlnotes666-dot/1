@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, AnyHttpUrl
 
 
 class ChatRequest(BaseModel):
@@ -37,6 +37,12 @@ class ChatSource(BaseModel):
     similarity: float
 
 
+class WebSource(BaseModel):
+    title: str
+    url: AnyHttpUrl
+    score: float = Field(ge=0, le=1)
+
+
 class ChatResponse(BaseModel):
     conversation_id: UUID | None = None
 
@@ -49,3 +55,5 @@ class ChatResponse(BaseModel):
     usage: ChatUsage | None = None
 
     sources: list[ChatSource] = Field(default_factory=list)
+    
+    web_sources: list[WebSource] = Field(default_factory=list)

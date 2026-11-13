@@ -6,6 +6,16 @@ from app.core.dependencies.auth import (
     get_current_user,
     get_optional_admin,
 )
+
+from app.core.providers.tavily_search import (
+    TavilySearchError,
+    TavilySearchProvider,
+)
+
+from app.features.ai_assistant.services.web_search_agent.tool_executor import (
+    WebSearchExecutor,
+)
+
 from app.core.supabase import get_supabase_user_client
 from app.core.providers.exceptions import ProviderConfigurationError
 
@@ -118,16 +128,27 @@ def get_ai_assistant_service(
         )
 
     try:
+        web_search_executor = WebSearchExecutor(
+            provider=TavilySearchProvider()
+        )
+
         return AIAssistantService(
             retrieval_service=retrieval_service,
             context_builder=context_builder,
             tool_executor=tool_executor,
+            web_search_executor=web_search_executor,
         )
 
     except ProviderConfigurationError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI provider is not configured.",
+        ) from None
+
+    except TavilySearchError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Web search provider is not configured.",
         ) from None
 
 
