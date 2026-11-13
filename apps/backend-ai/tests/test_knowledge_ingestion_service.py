@@ -16,10 +16,12 @@ def dependencies():
     article_repository = MagicMock()
     chunk_repository = MagicMock()
     document_processor = MagicMock()
+    ingestion_repository = MagicMock()
 
     service = KnowledgeIngestionService(
         article_repository=article_repository,
         chunk_repository=chunk_repository,
+        ingestion_repository=ingestion_repository,
         document_processor=document_processor,
     )
 

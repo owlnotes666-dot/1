@@ -24,3 +24,27 @@ class KnowledgeArticleRepository:
             return None
 
         return response.data[0]
+
+    def get_all_published_articles(self) -> list[dict]:
+        response = (
+            self.client.schema("medical")
+            .table(self.TABLE_NAME)
+            .select("id, title, content, status")
+            .eq("status", "Published")
+            .execute()
+        )
+
+        return response.data or []
+
+    def get_all_article_ids(self) -> list[UUID]:
+        response = (
+            self.client.schema("medical")
+            .table(self.TABLE_NAME)
+            .select("id")
+            .execute()
+        )
+
+        return [
+            UUID(row["id"])
+            for row in (response.data or [])
+        ]
