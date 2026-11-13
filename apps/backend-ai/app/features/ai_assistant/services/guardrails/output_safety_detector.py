@@ -36,7 +36,7 @@ async def detect_unsafe_output(
                 content=content,
             ),
         ],
-        model=settings.ai_model_classifier,
+        model=settings.ai_model,
         max_tokens=256,
         temperature=0.0,
     )

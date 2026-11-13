@@ -30,6 +30,13 @@ class ChatUsage(BaseModel):
     total_tokens: int = 0
 
 
+class ChatSource(BaseModel):
+    article_id: UUID
+    article_title: str
+    chunk_index: int
+    similarity: float
+
+
 class ChatResponse(BaseModel):
     conversation_id: UUID | None = None
 
@@ -40,3 +47,5 @@ class ChatResponse(BaseModel):
     model: str
 
     usage: ChatUsage | None = None
+
+    sources: list[ChatSource] = Field(default_factory=list)
