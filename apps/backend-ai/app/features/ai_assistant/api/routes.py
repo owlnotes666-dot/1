@@ -83,6 +83,24 @@ async def ingest_knowledge_article(
         ) from None
 
 
+@router.delete("/knowledge/{article_id}/index")
+async def remove_knowledge_article_index(
+    article_id: UUID,
+    current_admin: AuthenticatedUser = Depends(get_current_admin),
+    ingestion_service: KnowledgeIngestionService = Depends(
+        get_knowledge_ingestion_service
+    ),
+):
+    try:
+        return ingestion_service.remove_article_index(article_id)
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Knowledge article index removal failed.",
+        ) from None
+
+
 @router.post("/knowledge/ingest-all")
 @limiter.limit("2/minute")
 async def ingest_all_knowledge_articles(

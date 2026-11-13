@@ -4,6 +4,8 @@ import {
   createKnowledgeArticle,
   updateKnowledgeArticle,
   deleteKnowledgeArticle,
+  ingestKnowledgeArticle,
+  removeKnowledgeArticleIndex,
 } from "../api/knowledgeBase.service";
 import type {
   CreateKnowledgeArticleInput,
@@ -23,8 +25,22 @@ export const useCreateKnowledgeArticle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateKnowledgeArticleInput) =>
-      createKnowledgeArticle(input),
+    mutationFn: async (input: CreateKnowledgeArticleInput) => {
+      const article = await createKnowledgeArticle(input);
+
+      let ingestionFailed = false;
+
+      if (article.status === "Published") {
+        try {
+          await ingestKnowledgeArticle(article.id);
+        } catch (error) {
+          console.error("Knowledge article ingestion failed:", error);
+          ingestionFailed = true;
+        }
+      }
+
+      return { article, ingestionFailed };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: knowledgeArticlesKey });
     },
@@ -35,8 +51,30 @@ export const useUpdateKnowledgeArticle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateKnowledgeArticleInput) =>
-      updateKnowledgeArticle(input),
+    mutationFn: async (
+      input: UpdateKnowledgeArticleInput & {
+        previousStatus: "Draft" | "Published";
+      },
+    ) => {
+      const { previousStatus, ...articleInput } = input;
+
+      const article = await updateKnowledgeArticle(articleInput);
+
+      let ingestionFailed = false;
+
+      try {
+        if (article.status === "Published") {
+          await ingestKnowledgeArticle(article.id);
+        } else if (previousStatus === "Published") {
+          await removeKnowledgeArticleIndex(article.id);
+        }
+      } catch (error) {
+        console.error("Knowledge article indexing operation failed:", error);
+        ingestionFailed = true;
+      }
+
+      return { article, ingestionFailed };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: knowledgeArticlesKey });
     },

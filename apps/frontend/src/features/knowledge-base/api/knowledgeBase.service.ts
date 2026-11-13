@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { apiRequest } from "@/lib/api/client";
 import type {
   KnowledgeArticleWithCategory,
   KnowledgeCategory,
@@ -116,4 +117,20 @@ export const deleteKnowledgeArticle = async (id: string) => {
     .eq("id", id);
 
   if (error) throw error;
+};
+
+export const ingestKnowledgeArticle = async (
+  articleId: string,
+): Promise<void> => {
+  await apiRequest(`/api/v1/ai-assistant/knowledge/${articleId}/ingest`, {
+    method: "POST",
+  });
+};
+
+export const removeKnowledgeArticleIndex = async (
+  articleId: string,
+): Promise<void> => {
+  await apiRequest(`/api/v1/ai-assistant/knowledge/${articleId}/index`, {
+    method: "DELETE",
+  });
 };

@@ -72,6 +72,20 @@ class KnowledgeIngestionService:
 
         return await self._process_article(article)
 
+    def remove_article_index(self, article_id: UUID) -> dict:
+        self.chunk_repository.delete_article_chunks(article_id)
+        self.ingestion_repository.delete_ingestion(article_id)
+
+        logger.info(
+            "Knowledge article index removed: %s",
+            article_id,
+        )
+
+        return {
+            "article_id": str(article_id),
+            "status": "removed",
+        }
+
     async def ingest_all_articles(self) -> dict:
         articles = self.article_repository.get_all_published_articles()
 

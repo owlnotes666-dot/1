@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 
 import {
   knowledgeArticleSchema,
@@ -68,17 +69,31 @@ export default function AddKnowledgeArticleModal({
     };
   }, [isOpen, onClose]);
 
-  const onSubmit = async (values: KnowledgeArticleFormValues) => {
+  const onSubmit = async (values: KnowledgeArticleFormInput) => {
     try {
-      await createArticle.mutateAsync({
+      const result = await createArticle.mutateAsync({
         ...values,
+        tags: values.tags ?? [],
         cover_image_url: values.cover_image_url || null,
       });
+
+      if (result.ingestionFailed) {
+        toast.error(
+          "Article saved, but AI indexing failed. Please retry indexing later.",
+        );
+      } else {
+        toast.success(
+          values.status === "Published"
+            ? "Article published and indexed successfully."
+            : "Article created successfully.",
+        );
+      }
 
       reset();
       onClose();
     } catch (error) {
       console.error("Failed to create knowledge article:", error);
+      toast.error("Failed to create article. Please try again.");
     }
   };
 

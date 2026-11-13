@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
+import { toast } from "sonner";
 
 import {
   knowledgeArticleSchema,
@@ -105,15 +106,29 @@ export default function EditKnowledgeArticleModal({
     if (!article) return;
 
     try {
-      await updateArticle.mutateAsync({
+      const result = await updateArticle.mutateAsync({
         id: article.id,
         ...values,
         cover_image_url: values.cover_image_url || null,
+        previousStatus: article.status,
       });
+
+      if (result.ingestionFailed) {
+        toast.error(
+          "Article updated, but AI indexing failed. Please retry indexing later.",
+        );
+      } else {
+        toast.success(
+          values.status === "Published"
+            ? "Article updated and indexed successfully."
+            : "Article updated successfully.",
+        );
+      }
 
       onClose();
     } catch (error) {
       console.error("Failed to update knowledge article:", error);
+      toast.error("Failed to update article. Please try again.");
     }
   };
 
