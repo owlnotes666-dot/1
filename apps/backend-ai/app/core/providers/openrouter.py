@@ -1,5 +1,6 @@
-
+import json
 import httpx
+
 from openai import (
     APIConnectionError,
     APIStatusError,
@@ -14,6 +15,7 @@ from app.core.providers.base import (
     BaseAIProvider,
     ProviderMessage,
     ProviderResponse,
+    ProviderToolCall,
 )
 from app.core.providers.exceptions import (
     ProviderAuthenticationError,
@@ -47,19 +49,50 @@ class OpenRouterProvider(BaseAIProvider):
         model: str,
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        tools: list[dict] | None = None,
     ) -> ProviderResponse:
         try:
+            formatted_messages = []
+
+            for message in messages:
+                formatted_message = {
+                    "role": message.role,
+                    "content": message.content,
+                }
+
+                if message.tool_call_id:
+                    formatted_message["tool_call_id"] = message.tool_call_id
+
+                if message.tool_calls:
+                    formatted_message["tool_calls"] = [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.name,
+                                "arguments": json.dumps(
+                                    tool_call.arguments
+                                ),
+                            },
+                        }
+                        for tool_call in message.tool_calls
+                    ]
+
+                formatted_messages.append(formatted_message)
+
+            request_options = {
+                "model": model,
+                "messages": formatted_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+
+            if tools:
+                request_options["tools"] = tools
+                request_options["tool_choice"] = "auto"
+
             response = await self.client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": message.role,
-                        "content": message.content,
-                    }
-                    for message in messages
-                ],
-                max_tokens=max_tokens,
-                temperature=temperature,
+                **request_options
             )
 
             if not response.choices:
@@ -67,9 +100,39 @@ class OpenRouterProvider(BaseAIProvider):
                     "The provider returned no response choices."
                 )
 
-            content = response.choices[0].message.content
+            assistant_message = response.choices[0].message
 
-            if not content or not content.strip():
+            content = assistant_message.content
+
+            tool_calls = []
+
+            for tool_call in assistant_message.tool_calls or []:
+                try:
+                    arguments = json.loads(
+                        tool_call.function.arguments
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    raise ProviderResponseError(
+                        "The provider returned invalid tool arguments."
+                    ) from None
+
+                if not isinstance(arguments, dict):
+                    raise ProviderResponseError(
+                        "Tool arguments must be a JSON object."
+                    )
+
+                tool_calls.append(
+                    ProviderToolCall(
+                        id=tool_call.id,
+                        name=tool_call.function.name,
+                        arguments=arguments,
+                    )
+                )
+
+            if (
+                (content is None or not content.strip())
+                and not tool_calls
+            ):
                 raise ProviderResponseError(
                     "The provider returned an empty response."
                 )
@@ -87,6 +150,7 @@ class OpenRouterProvider(BaseAIProvider):
                 content=content,
                 model=response.model or model,
                 usage=usage,
+                tool_calls=tool_calls,
             )
 
         except AuthenticationError as exc:

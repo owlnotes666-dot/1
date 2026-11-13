@@ -164,3 +164,16 @@ def get_current_admin(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authorization service is temporarily unavailable.",
         ) from None
+
+
+def get_optional_admin(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> AuthenticatedUser | None:
+    try:
+        return get_current_admin(current_user)
+
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_403_FORBIDDEN:
+            return None
+
+        raise
