@@ -1,8 +1,11 @@
 from uuid import uuid4
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+
+from app.core.providers.base import ProviderResponse, ProviderToolCall
 
 from app.main import app
 from app.core.dependencies.auth import (
@@ -18,6 +21,9 @@ from app.features.ai_assistant.schemas.chat import (
 
 from app.core.rate_limit import limiter
 
+from app.features.ai_assistant.services.ai_assistant_service import (
+    AIAssistantService,
+)
 
 from app.core.dependencies.auth import get_current_admin
 
@@ -183,3 +189,151 @@ def test_rate_limit_exceeded_is_audited(client):
         event_name="rate_limit_exceeded",
         ip_address="198.51.100.30",
     )
+
+
+@pytest.mark.asyncio
+async def test_chat_returns_web_sources(client, monkeypatch):
+    from unittest.mock import AsyncMock, MagicMock
+
+    user = AuthenticatedUser(
+        id=uuid4(),
+        email="demo@example.com",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    # Mock input guardrails
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.check_user_message",
+        lambda message: SimpleNamespace(
+            is_allowed=True,
+            is_emergency=False,
+            prompt_injection_suspected=False,
+        ),
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.inspect_pii",
+        lambda message: SimpleNamespace(
+            contains_pii=False,
+            redacted_content=message,
+        ),
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_prompt_injection",
+        AsyncMock(return_value=False),
+    )
+
+    # Mock output guardrails
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.check_ai_response",
+        lambda content: SimpleNamespace(
+            is_safe=True,
+            content=content,
+        ),
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.detect_unsafe_output",
+        AsyncMock(return_value=False),
+    )
+
+    # Mock LLM provider
+    provider = MagicMock()
+
+    provider.generate = AsyncMock(
+        side_effect=[
+            ProviderResponse(
+                content=None,
+                model="test-model",
+                tool_calls=[
+                    ProviderToolCall(
+                        id="call_search_1",
+                        name="search_web",
+                        arguments={
+                            "query": "diabetes treatment guidelines"
+                        },
+                    )
+                ],
+            ),
+            ProviderResponse(
+                content=(
+                    "According to the available web sources, "
+                    "diabetes treatment depends on individual "
+                    "clinical circumstances."
+                ),
+                model="test-model",
+                usage={
+                    "prompt_tokens": 100,
+                    "completion_tokens": 40,
+                    "total_tokens": 140,
+                },
+            ),
+        ]
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.get_ai_provider",
+        lambda: provider,
+    )
+
+    # Mock Tavily search executor
+    web_search_executor = MagicMock()
+
+    web_search_executor.execute = AsyncMock(
+        return_value={
+            "query": "diabetes treatment guidelines",
+            "results": [
+                {
+                    "title": "Diabetes Clinical Guidelines",
+                    "url": "https://example.com/diabetes-guidelines",
+                    "content": "Clinical guidelines overview.",
+                    "score": 0.95,
+                }
+            ],
+        }
+    )
+
+    # Use the real AI Assistant service
+    ai_service = AIAssistantService(
+        web_search_executor=web_search_executor,
+    )
+
+    app.dependency_overrides[
+        get_ai_assistant_service
+    ] = lambda: ai_service
+
+    response = client.post(
+        "/api/v1/ai-assistant/chat",
+        json={
+            "message": "Search for diabetes treatment guidelines."
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "diabetes treatment depends" in data["message"]
+
+    assert len(data["web_sources"]) == 1
+
+    assert data["web_sources"][0]["title"] == (
+        "Diabetes Clinical Guidelines"
+    )
+
+    assert data["web_sources"][0]["url"] == (
+        "https://example.com/diabetes-guidelines"
+    )
+
+    assert data["web_sources"][0]["score"] == 0.95
+
+    web_search_executor.execute.assert_awaited_once_with(
+        name="search_web",
+        arguments={
+            "query": "diabetes treatment guidelines"
+        },
+    )
+
+    assert provider.generate.await_count == 2
