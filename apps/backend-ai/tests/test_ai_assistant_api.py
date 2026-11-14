@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -42,6 +43,7 @@ class FakeAIAssistantService:
         request,
         user_id=None,
         ip_address=None,
+        use_provider_stream=False,
     ):
         return ChatResponse(
             conversation_id=request.conversation_id,
@@ -337,3 +339,45 @@ async def test_chat_returns_web_sources(client, monkeypatch):
     )
 
     assert provider.generate.await_count == 2
+
+
+def test_chat_stream_returns_sse_events(client):
+    user = AuthenticatedUser(
+        id=uuid4(),
+        email="demo@example.com",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.post(
+        "/api/v1/ai-assistant/chat/stream",
+        json={"message": "What is a medical dashboard?"},
+    )
+
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+
+    body = response.text
+
+    assert "event: metadata" in body
+    assert "event: chunk" in body
+    assert "event: done" in body
+
+
+    chunks = []
+
+    for event in body.strip().split("\n\n"):
+        if event.startswith("event: chunk"):
+            data_line = next(
+                line for line in event.splitlines()
+                if line.startswith("data: ")
+            )
+            payload = json.loads(data_line.removeprefix("data: "))
+            chunks.append(payload["content"])
+
+    full_message = "".join(chunks)
+
+    assert full_message == (
+        "A medical dashboard helps organize healthcare information."
+    )
+    assert '"provider": "openrouter"' in body

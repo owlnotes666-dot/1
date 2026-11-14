@@ -18,39 +18,83 @@ interface Message {
 function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
-  const { sendMessage, isPending, error } = useChat();
+  const { streamMessage } = useChat();
 
   const handleSendMessage = async (message: string) => {
+    const userMessageId = crypto.randomUUID();
+    const assistantMessageId = crypto.randomUUID();
+
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: userMessageId,
       role: "user",
       content: message,
     };
 
-    setMessages((previous) => [...previous, userMessage]);
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+    };
+
+    setMessages((previous) => [
+      ...previous,
+      userMessage,
+      assistantMessage,
+    ]);
+
+    setIsStreaming(true);
+    setStreamError(null);
 
     try {
-      const response = await sendMessage({
-        message,
-        conversation_id: conversationId,
-      });
+      await streamMessage(
+        {
+          message,
+          conversation_id: conversationId,
+        },
+        {
+          onMetadata: (metadata) => {
+            if (metadata.conversation_id) {
+              setConversationId(metadata.conversation_id);
+            }
 
-      if (response.conversation_id) {
-        setConversationId(response.conversation_id);
-      }
+            setMessages((previous) =>
+              previous.map((item) =>
+                item.id === assistantMessageId
+                  ? {
+                      ...item,
+                      sources: metadata.sources,
+                      webSources: metadata.web_sources,
+                    }
+                  : item,
+              ),
+            );
+          },
 
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.message,
-        sources: response.sources,
-        webSources: response.web_sources,
-      };
-
-      setMessages((previous) => [...previous, assistantMessage]);
-    } catch {
-      // The mutation error is displayed below.
+          onChunk: (content) => {
+            setMessages((previous) =>
+              previous.map((item) =>
+                item.id === assistantMessageId
+                  ? {
+                      ...item,
+                      content: item.content + content,
+                    }
+                  : item,
+              ),
+            );
+          },
+        },
+      );
+    } catch (error) {
+      setStreamError(
+        error instanceof Error
+          ? error.message
+          : "Unable to get a response from AI Assistant.",
+      );
+    } finally {
+      setIsStreaming(false);
     }
   };
 
@@ -80,21 +124,24 @@ function ChatWindow() {
           ))
         )}
 
-        {isPending && (
+        {isStreaming && (
           <div className="text-sm text-slate-500 dark:text-slate-400">
-            AI Assistant is thinking...
+            AI Assistant is responding...
           </div>
         )}
 
-        {error && (
+        {streamError && (
           <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            {error.message}
+            {streamError}
           </div>
         )}
       </div>
 
       <div className="border-t border-slate-200 p-4 dark:border-slate-700">
-        <ChatInput onSend={handleSendMessage} isPending={isPending} />
+        <ChatInput
+          onSend={handleSendMessage}
+          isPending={isStreaming}
+        />
 
         <p className="mt-2 text-center text-xs text-slate-400">
           AI-generated information may not always be accurate. Always verify
