@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Literal
+from collections.abc import AsyncIterator
 
 
 MessageRole = Literal["system", "user", "assistant", "tool"]
@@ -43,3 +44,15 @@ class BaseAIProvider(ABC):
     ) -> ProviderResponse:
         """Generate an AI response, optionally using tools."""
         raise NotImplementedError
+
+    def generate_stream(
+        self,
+        messages: list[ProviderMessage],
+        model: str,
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+    ) -> AsyncIterator[str]:
+        """Generate an AI response as an asynchronous text stream."""
+        raise NotImplementedError(
+            "This provider does not support streaming."
+        )

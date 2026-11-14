@@ -192,3 +192,77 @@ class OpenRouterProvider(BaseAIProvider):
             raise ProviderConnectionError(
                 "Could not connect to OpenRouter."
             ) from exc
+
+    async def generate_stream(
+        self,
+        messages: list[ProviderMessage],
+        model: str,
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+    ):
+        try:
+            formatted_messages = []
+
+            for message in messages:
+                formatted_messages.append({
+                    "role": message.role,
+                    "content": message.content,
+                })
+
+            stream = await self.client.chat.completions.create(
+                model=model,
+                messages=formatted_messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stream=True,
+            )
+
+            async for chunk in stream:
+                if not chunk.choices:
+                    continue
+
+                delta = chunk.choices[0].delta
+                content = delta.content
+
+                if content:
+                    yield content
+
+        except AuthenticationError as exc:
+            raise ProviderAuthenticationError(
+                "OpenRouter authentication failed."
+            ) from exc
+
+        except RateLimitError as exc:
+            raise ProviderRateLimitError(
+                "OpenRouter rate limit exceeded."
+            ) from exc
+
+        except APITimeoutError as exc:
+            raise ProviderTimeoutError(
+                "OpenRouter request timed out."
+            ) from exc
+
+        except APIConnectionError as exc:
+            raise ProviderConnectionError(
+                "Could not connect to OpenRouter."
+            ) from exc
+
+        except APIStatusError as exc:
+            if exc.status_code >= 500:
+                raise ProviderUnavailableError(
+                    "OpenRouter is temporarily unavailable."
+                ) from exc
+
+            raise ProviderResponseError(
+                f"OpenRouter returned an unexpected status: {exc.status_code}."
+            ) from exc
+
+        except httpx.TimeoutException as exc:
+            raise ProviderTimeoutError(
+                "OpenRouter request timed out."
+            ) from exc
+
+        except httpx.ConnectError as exc:
+            raise ProviderConnectionError(
+                "Could not connect to OpenRouter."
+            ) from exc

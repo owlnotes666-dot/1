@@ -1,4 +1,5 @@
 from uuid import UUID
+import time
 import logging
 import json
 
@@ -9,11 +10,9 @@ from app.features.ai_assistant.services.database_agent.tool_registry import (
 
 from app.features.ai_assistant.services.web_search_agent.tool_executor import (
     WebSearchExecutionError,
-)
-
-from app.features.ai_assistant.services.web_search_agent.tool_executor import (
     WebSearchExecutor,
 )
+
 
 from app.features.ai_assistant.services.database_agent.tool_executor import (
     ToolExecutor,
@@ -108,12 +107,19 @@ class AIAssistantService:
 
         for round_index in range(self.MAX_TOOL_ROUNDS + 1):
 
+            llm_started = time.perf_counter()
+
             response = await self.provider.generate(
                 messages=messages,
                 model=settings.ai_model,
                 max_tokens=1024,
                 temperature=0.2,
                 tools=tools,
+            )
+
+            logger.info(
+                "AI Performance | stage=openrouter_generation | duration_ms=%.2f",
+                (time.perf_counter() - llm_started) * 1000,
             )
 
             if response.usage:
@@ -160,9 +166,15 @@ class AIAssistantService:
                         }
                     else:
                         try:
+                            web_search_started = time.perf_counter()
                             result = await self.web_search_executor.execute(
                                 name=tool_name,
                                 arguments=tool_call.arguments,
+                            )
+
+                            logger.info(
+                                "AI Performance | stage=tavily_search | duration_ms=%.2f",
+                                (time.perf_counter() - web_search_started) * 1000,
                             )
 
                             for item in result.get("results", []):
@@ -279,8 +291,16 @@ class AIAssistantService:
         user_id: UUID | None = None,
         ip_address: str | None = None,
     ) -> ChatResponse:
+        request_started = time.perf_counter()
+
+        input_started = time.perf_counter()
 
         input_check = check_user_message(request.message)
+
+        logger.info(
+            "AI Performance | stage=input_guardrails | duration_ms=%.2f",
+            (time.perf_counter() - input_started) * 1000,
+        )
 
         if input_check.prompt_injection_suspected:
             audit_security_event(
@@ -327,8 +347,14 @@ class AIAssistantService:
                 model="guardrails",
             )
 
-            # Detect and redact personally identifiable information
+        pii_started = time.perf_counter()
+
         pii_check = inspect_pii(request.message)
+
+        logger.info(
+            "AI Performance | stage=pii_detection | duration_ms=%.2f",
+            (time.perf_counter() - pii_started) * 1000,
+        )
 
         if pii_check.contains_pii:
             audit_security_event(
@@ -340,9 +366,15 @@ class AIAssistantService:
         safe_user_message = pii_check.redacted_content
 
         try:
+            injection_started = time.perf_counter()
             injection_detected = await detect_prompt_injection(
                 message=safe_user_message,
                 provider=self.provider,
+            )
+
+            logger.info(
+                "AI Performance | stage=prompt_injection_detection | duration_ms=%.2f",
+                (time.perf_counter() - injection_started) * 1000,
             )
 
         except Exception:
@@ -385,9 +417,15 @@ class AIAssistantService:
 
         if self.retrieval_service and self.context_builder:
             try:
+                retrieval_started = time.perf_counter()
                 retrieved_chunks = await self.retrieval_service.retrieve(
                     query=safe_user_message,
                     match_count=5,
+                )
+
+                logger.info(
+                    "AI Performance | stage=rag_retrieval | duration_ms=%.2f",
+                    (time.perf_counter() - retrieval_started) * 1000,
                 )
 
                 rag_context = self.context_builder.build_context(
@@ -612,7 +650,14 @@ class AIAssistantService:
                 request.conversation_id,
             )
 
+        output_started = time.perf_counter()
+
         output_check = check_ai_response(provider_response.content)
+
+        logger.info(
+            "AI Performance | stage=output_guardrails | duration_ms=%.2f",
+            (time.perf_counter() - output_started) * 1000,
+        )
 
         if not output_check.is_safe:
             audit_security_event(
@@ -692,6 +737,11 @@ class AIAssistantService:
             )
             for result in retrieved_chunks
         ]
+
+        logger.info(
+            "AI Performance | stage=total_request | duration_ms=%.2f",
+            (time.perf_counter() - request_started) * 1000,
+        )
 
         return ChatResponse(
             conversation_id=request.conversation_id,
