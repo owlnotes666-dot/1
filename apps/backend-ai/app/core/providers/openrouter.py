@@ -199,33 +199,149 @@ class OpenRouterProvider(BaseAIProvider):
         model: str,
         max_tokens: int = 1024,
         temperature: float = 0.7,
-    ):
+        tools: list[dict] | None = None,
+    ) -> ProviderResponse:
         try:
             formatted_messages = []
 
             for message in messages:
-                formatted_messages.append({
+                formatted_message = {
                     "role": message.role,
                     "content": message.content,
-                })
+                }
+
+                if message.tool_call_id:
+                    formatted_message["tool_call_id"] = message.tool_call_id
+
+                if message.tool_calls:
+                    formatted_message["tool_calls"] = [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.name,
+                                "arguments": json.dumps(
+                                    tool_call.arguments
+                                ),
+                            },
+                        }
+                        for tool_call in message.tool_calls
+                    ]
+
+                formatted_messages.append(formatted_message)
+
+            request_options = {
+                "model": model,
+                "messages": formatted_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+                "stream_options": {
+                    "include_usage": True,
+                },
+            }
+
+            if tools:
+                request_options["tools"] = tools
+                request_options["tool_choice"] = "auto"
 
             stream = await self.client.chat.completions.create(
-                model=model,
-                messages=formatted_messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                stream=True,
+                **request_options
             )
 
+            content_parts = []
+            tool_calls_by_index = {}
+            usage = None
+            response_model = model
+
             async for chunk in stream:
+                if chunk.model:
+                    response_model = chunk.model
+
+                if chunk.usage:
+                    usage = {
+                        "prompt_tokens": chunk.usage.prompt_tokens,
+                        "completion_tokens": chunk.usage.completion_tokens,
+                        "total_tokens": chunk.usage.total_tokens,
+                    }
+
                 if not chunk.choices:
                     continue
 
                 delta = chunk.choices[0].delta
-                content = delta.content
 
-                if content:
-                    yield content
+                if delta.content:
+                    content_parts.append(delta.content)
+
+                for tool_delta in delta.tool_calls or []:
+                    index = tool_delta.index
+
+                    if index not in tool_calls_by_index:
+                        tool_calls_by_index[index] = {
+                            "id": "",
+                            "name": "",
+                            "arguments": "",
+                        }
+
+                    current_tool = tool_calls_by_index[index]
+
+                    if tool_delta.id:
+                        current_tool["id"] = tool_delta.id
+
+                    if tool_delta.function:
+                        if tool_delta.function.name:
+                            current_tool["name"] += (
+                                tool_delta.function.name
+                            )
+
+                        if tool_delta.function.arguments:
+                            current_tool["arguments"] += (
+                                tool_delta.function.arguments
+                            )
+
+            tool_calls = []
+
+            for tool_data in tool_calls_by_index.values():
+                try:
+                    arguments = json.loads(
+                        tool_data["arguments"]
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    raise ProviderResponseError(
+                        "The provider returned invalid tool arguments."
+                    ) from None
+
+                if not isinstance(arguments, dict):
+                    raise ProviderResponseError(
+                        "Tool arguments must be a JSON object."
+                    )
+
+                if not tool_data["id"] or not tool_data["name"]:
+                    raise ProviderResponseError(
+                        "The provider returned an incomplete tool call."
+                    )
+
+                tool_calls.append(
+                    ProviderToolCall(
+                        id=tool_data["id"],
+                        name=tool_data["name"],
+                        arguments=arguments,
+                    )
+                )
+
+            content = "".join(content_parts) or None
+
+            if content is None and not tool_calls:
+                raise ProviderResponseError(
+                    "The provider returned an empty response."
+                )
+
+            return ProviderResponse(
+                content=content,
+                model=response_model,
+                usage=usage,
+                tool_calls=tool_calls,
+            )
 
         except AuthenticationError as exc:
             raise ProviderAuthenticationError(

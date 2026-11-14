@@ -1,5 +1,6 @@
 
 from unittest.mock import AsyncMock, MagicMock
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -43,6 +44,18 @@ def messages():
             content="Explain medical dashboards.",
         )
     ]
+
+
+class MockAsyncStream:
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def __aiter__(self):
+        async def iterator():
+            for chunk in self.chunks:
+                yield chunk
+
+        return iterator()
 
 
 @pytest.mark.anyio
@@ -140,3 +153,136 @@ async def test_empty_provider_response(provider, messages):
 
     with pytest.raises(ProviderResponseError):
         await provider.generate(messages, "test-model")
+
+
+@pytest.mark.anyio
+async def test_generate_stream_collects_text(provider, messages):
+    chunks = [
+        SimpleNamespace(
+            model="test-model",
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(
+                        content="Hello ",
+                        tool_calls=None,
+                    )
+                )
+            ],
+            usage=None,
+        ),
+        SimpleNamespace(
+            model="test-model",
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(
+                        content="world!",
+                        tool_calls=None,
+                    )
+                )
+            ],
+            usage=None,
+        ),
+        SimpleNamespace(
+            model="test-model",
+            choices=[],
+            usage=SimpleNamespace(
+                prompt_tokens=10,
+                completion_tokens=5,
+                total_tokens=15,
+            ),
+        ),
+    ]
+
+    provider.client.chat.completions.create.return_value = (
+        MockAsyncStream(chunks)
+    )
+
+    response = await provider.generate_stream(
+        messages=messages,
+        model="test-model",
+    )
+
+    assert response.content == "Hello world!"
+    assert response.model == "test-model"
+    assert response.usage == {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 15,
+    }
+    assert response.tool_calls == []
+
+    provider.client.chat.completions.create.assert_called_once()
+
+    call_kwargs = (
+        provider.client.chat.completions.create.call_args.kwargs
+    )
+    assert call_kwargs["stream"] is True
+
+
+@pytest.mark.anyio
+async def test_generate_stream_collects_tool_calls(provider, messages):
+    chunks = [
+        SimpleNamespace(
+            model="test-model",
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(
+                        content=None,
+                        tool_calls=[
+                            SimpleNamespace(
+                                index=0,
+                                id="call_123",
+                                function=SimpleNamespace(
+                                    name="search_web",
+                                    arguments='{"query":',
+                                ),
+                            )
+                        ],
+                    )
+                )
+            ],
+            usage=None,
+        ),
+        SimpleNamespace(
+            model="test-model",
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(
+                        content=None,
+                        tool_calls=[
+                            SimpleNamespace(
+                                index=0,
+                                id=None,
+                                function=SimpleNamespace(
+                                    name=None,
+                                    arguments='"medical AI"}',
+                                ),
+                            )
+                        ],
+                    )
+                )
+            ],
+            usage=None,
+        ),
+    ]
+
+    provider.client.chat.completions.create.return_value = (
+        MockAsyncStream(chunks)
+    )
+
+    response = await provider.generate_stream(
+        messages=messages,
+        model="test-model",
+        tools=[{"type": "function"}],
+    )
+
+    assert response.content is None
+    assert len(response.tool_calls) == 1
+
+    tool_call = response.tool_calls[0]
+
+    assert tool_call.id == "call_123"
+    assert tool_call.name == "search_web"
+    assert tool_call.arguments == {
+        "query": "medical AI",
+    }
