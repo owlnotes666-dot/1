@@ -1,3 +1,4 @@
+import time
 from uuid import UUID
 import json
 import logging
@@ -104,6 +105,13 @@ async def chat_stream(
             for index in range(0, len(message), chunk_size):
                 chunk = message[index:index + chunk_size]
 
+                logger.info(
+                    "SSE chunk sent | index=%s | time=%.3f",
+                    index,
+                    time.perf_counter(),
+                )
+                print(
+                    f"SSE CHUNK SENT: index={index}, length={len(chunk)}", flush=True)
                 yield (
                     f"event: chunk\n"
                     f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
