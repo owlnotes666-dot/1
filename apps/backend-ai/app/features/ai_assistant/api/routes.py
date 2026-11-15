@@ -51,6 +51,7 @@ async def chat(
     ai_service: AIAssistantService = Depends(
         get_ai_assistant_service
     ),
+    file_storage: TemporaryFileStorage = Depends(get_temporary_file_storage),
 ) -> ChatResponse:
     try:
         return await ai_service.generate_response(
@@ -59,6 +60,11 @@ async def chat(
             ip_address=(
                 request.client.host
                 if request.client
+                else None
+            ),
+            file_context=(
+                file_storage.get_context(chat_request.conversation_id)
+                if chat_request.conversation_id
                 else None
             ),
         )
