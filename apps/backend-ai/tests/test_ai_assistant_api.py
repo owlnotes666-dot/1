@@ -43,7 +43,6 @@ class FakeAIAssistantService:
         request,
         user_id=None,
         ip_address=None,
-        use_provider_stream=False,
     ):
         return ChatResponse(
             conversation_id=request.conversation_id,

@@ -46,16 +46,6 @@ def messages():
     ]
 
 
-class MockAsyncStream:
-    def __init__(self, chunks):
-        self.chunks = chunks
-
-    def __aiter__(self):
-        async def iterator():
-            for chunk in self.chunks:
-                yield chunk
-
-        return iterator()
 
 
 @pytest.mark.anyio
