@@ -3,7 +3,11 @@
 import { useState } from "react";
 
 import { useChat } from "../../hooks/useChat";
+import { useUploadFile } from "../../hooks/useUploadFile";
+import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
+
 import type { ChatSource, WebSource } from "../../types";
+
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 
@@ -19,11 +23,64 @@ function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+
+  const { data: isAdmin = false } = useIsAdmin();
 
   const { sendMessage, isPending } = useChat();
 
+  const { uploadFile, isUploading } = useUploadFile();
+
+  const getOrCreateConversationId = () => {
+    if (conversationId) return conversationId;
+
+    const newConversationId = crypto.randomUUID();
+    setConversationId(newConversationId);
+
+    return newConversationId;
+  };
+
+  const handleFilesSelected = async (files: File[]) => {
+    setUploadError(null);
+
+    const currentFilesCount = uploadedFiles.length;
+
+    if (currentFilesCount + files.length > 5) {
+      setUploadError("You can upload a maximum of 5 files per conversation.");
+      return;
+    }
+
+    const currentConversationId = getOrCreateConversationId();
+    const successfulUploads: string[] = [];
+
+    for (const file of files) {
+      try {
+        const response = await uploadFile({
+          conversationId: currentConversationId,
+          file,
+        });
+
+        successfulUploads.push(response.filename);
+      } catch (error) {
+        setUploadError(
+          error instanceof Error
+            ? error.message
+            : `Unable to upload ${file.name}.`,
+        );
+        break;
+      }
+    }
+
+    if (successfulUploads.length > 0) {
+      setUploadedFiles((previous) => [...previous, ...successfulUploads]);
+    }
+  };
+
   const handleSendMessage = async (message: string) => {
     setRequestError(null);
+
+    const currentConversationId = getOrCreateConversationId();
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -36,7 +93,7 @@ function ChatWindow() {
     try {
       const response = await sendMessage({
         message,
-        conversation_id: conversationId,
+        conversation_id: currentConversationId,
       });
 
       if (response.conversation_id) {
@@ -99,10 +156,23 @@ function ChatWindow() {
             {requestError}
           </div>
         )}
+
+        {uploadError && (
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+            {uploadError}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-slate-200 p-4 dark:border-slate-700">
-        <ChatInput onSend={handleSendMessage} isPending={isPending} />
+        <ChatInput
+          onSend={handleSendMessage}
+          onFilesSelected={handleFilesSelected}
+          isPending={isPending}
+          isAdmin={isAdmin}
+          isUploading={isUploading}
+          uploadedFiles={uploadedFiles}
+        />
 
         <p className="mt-2 text-center text-xs text-slate-400">
           AI-generated information may not always be accurate. Always verify
