@@ -15,6 +15,10 @@ supabase = "*"
 gotrue = "*"
 slowapi = "*"
 langchain = "*"
+pypdf = "*"
+python-docx = "*"
+openpyxl = "*"
+python-pptx = "*"
 
 [dev-packages]
 pytest = "*"
