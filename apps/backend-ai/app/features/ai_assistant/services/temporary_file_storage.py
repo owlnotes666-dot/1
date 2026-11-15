@@ -10,23 +10,24 @@ class TemporaryFileStorage:
     MAX_TOTAL_TEXT_LENGTH = 200_000
 
     def __init__(self) -> None:
-        self._storage: dict[UUID, dict] = {}
+        self._storage: dict[tuple[UUID, UUID], dict] = {}
         self._lock = Lock()
 
     def _cleanup_expired(self) -> None:
         now = time.monotonic()
 
-        expired_conversations = [
-            conversation_id
-            for conversation_id, data in self._storage.items()
+        expired_keys = [
+            storage_key
+            for storage_key, data in self._storage.items()
             if data["expires_at"] <= now
         ]
 
-        for conversation_id in expired_conversations:
-            del self._storage[conversation_id]
+        for storage_key in expired_keys:
+            del self._storage[storage_key]
 
     def add_file(
         self,
+        owner_id: UUID,
         conversation_id: UUID,
         filename: str,
         text: str,
@@ -38,14 +39,16 @@ class TemporaryFileStorage:
             self._cleanup_expired()
 
             now = time.monotonic()
-            data = self._storage.get(conversation_id)
+            storage_key = (owner_id, conversation_id)
+
+            data = self._storage.get(storage_key)
 
             if data is None:
                 data = {
                     "files": [],
                     "expires_at": now + self.TTL_SECONDS,
                 }
-                self._storage[conversation_id] = data
+                self._storage[storage_key] = data
 
             files = data["files"]
 
@@ -74,12 +77,14 @@ class TemporaryFileStorage:
 
     def get_context(
         self,
+        owner_id: UUID,
         conversation_id: UUID,
     ) -> str:
         with self._lock:
             self._cleanup_expired()
 
-            data = self._storage.get(conversation_id)
+            storage_key = (owner_id, conversation_id)
+            data = self._storage.get(storage_key)
 
             if data is None:
                 return ""
@@ -91,12 +96,14 @@ class TemporaryFileStorage:
 
     def get_files(
         self,
+        owner_id: UUID,
         conversation_id: UUID,
     ) -> list[str]:
         with self._lock:
             self._cleanup_expired()
 
-            data = self._storage.get(conversation_id)
+            storage_key = (owner_id, conversation_id)
+            data = self._storage.get(storage_key)
 
             if data is None:
                 return []
@@ -108,10 +115,12 @@ class TemporaryFileStorage:
 
     def clear(
         self,
+        owner_id: UUID,
         conversation_id: UUID,
     ) -> None:
         with self._lock:
-            self._storage.pop(conversation_id, None)
+            storage_key = (owner_id, conversation_id)
+            self._storage.pop(storage_key, None)
 
     def cleanup_expired(self) -> None:
         with self._lock:

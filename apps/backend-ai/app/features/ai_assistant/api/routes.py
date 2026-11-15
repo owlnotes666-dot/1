@@ -1,31 +1,46 @@
-
 from uuid import UUID
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+    UploadFile,
+    File,
+    Form,
+)
 
 from app.core.dependencies.auth import (
     AuthenticatedUser,
     get_current_user,
     get_current_admin,
+    get_optional_admin,
 )
 from app.core.rate_limit import limiter
+
 from app.features.ai_assistant.schemas.chat import (
     ChatRequest,
     ChatResponse,
     FileUploadResponse,
 )
+
 from app.features.ai_assistant.services.ai_assistant_service import (
     AIAssistantService,
 )
+
 from app.features.ai_assistant.services.rag.knowledge_ingestion_service import (
     KnowledgeIngestionService,
 )
+
 from app.features.ai_assistant.api.dependencies import (
     get_knowledge_ingestion_service,
     get_ai_assistant_service,
     get_file_processing_service,
     get_temporary_file_storage,
 )
+
 from app.features.ai_assistant.services.file_processing_service import (
     FileProcessingService,
     FileProcessingError,
@@ -48,10 +63,13 @@ async def chat(
     request: Request,
     chat_request: ChatRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
+    current_admin: AuthenticatedUser | None = Depends(get_optional_admin),
     ai_service: AIAssistantService = Depends(
         get_ai_assistant_service
     ),
-    file_storage: TemporaryFileStorage = Depends(get_temporary_file_storage),
+    file_storage: TemporaryFileStorage = Depends(
+        get_temporary_file_storage
+    ),
 ) -> ChatResponse:
     try:
         return await ai_service.generate_response(
@@ -63,11 +81,15 @@ async def chat(
                 else None
             ),
             file_context=(
-                file_storage.get_context(chat_request.conversation_id)
-                if chat_request.conversation_id
+                file_storage.get_context(
+                    owner_id=current_admin.id,
+                    conversation_id=chat_request.conversation_id,
+                )
+                if current_admin and chat_request.conversation_id
                 else None
             ),
         )
+
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -118,6 +140,7 @@ async def upload_file(
         )
 
         file_storage.add_file(
+            owner_id=current_admin.id,
             conversation_id=conversation_id,
             filename=filename,
             text=extracted_text,

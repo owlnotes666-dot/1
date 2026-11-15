@@ -1,9 +1,22 @@
 import { createClient } from "@/lib/supabase/client";
-import type { ChatRequest, ChatResponse } from "../types";
+import type { ChatRequest, ChatResponse, FileUploadResponse } from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const supabase = createClient();
+
+async function getAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session?.access_token) {
+    throw new Error("Your session has expired. Please sign in again.");
+  }
+
+  return session.access_token;
+}
 
 export const aiAssistantApi = {
   async sendMessage(payload: ChatRequest): Promise<ChatResponse> {
@@ -11,20 +24,13 @@ export const aiAssistantApi = {
       throw new Error("Backend API URL is not configured.");
     }
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.access_token) {
-      throw new Error("Your session has expired. Please sign in again.");
-    }
+    const accessToken = await getAccessToken();
 
     const response = await fetch(`${API_BASE_URL}/api/v1/ai-assistant/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -38,5 +44,39 @@ export const aiAssistantApi = {
     }
 
     return response.json() as Promise<ChatResponse>;
+  },
+
+  async uploadFile(
+    conversationId: string,
+    file: File,
+  ): Promise<FileUploadResponse> {
+    if (!API_BASE_URL) {
+      throw new Error("Backend API URL is not configured.");
+    }
+
+    const accessToken = await getAccessToken();
+    const formData = new FormData();
+
+    formData.append("conversation_id", conversationId);
+    formData.append("file", file);
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/ai-assistant/files/upload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+
+      throw new Error(errorData?.detail || `Unable to upload ${file.name}.`);
+    }
+
+    return response.json() as Promise<FileUploadResponse>;
   },
 };

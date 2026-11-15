@@ -31,3 +31,9 @@ export interface ChatResponse {
   sources: ChatSource[];
   web_sources: WebSource[];
 }
+
+export interface FileUploadResponse {
+  conversation_id: string;
+  filename: string;
+  message: string;
+}

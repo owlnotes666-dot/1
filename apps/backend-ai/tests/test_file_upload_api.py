@@ -5,7 +5,10 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.core.dependencies.auth import AuthenticatedUser, get_current_admin
+from app.core.dependencies.auth import (
+    AuthenticatedUser,
+    get_current_admin,
+)
 
 from app.features.ai_assistant.api.dependencies import (
     get_file_processing_service,
@@ -27,15 +30,20 @@ def storage():
 
 
 @pytest.fixture
-def client(storage):
+def admin_user():
+    return AuthenticatedUser(
+        id=uuid4(),
+        email="admin@example.com",
+    )
+
+
+@pytest.fixture
+def client(storage, admin_user):
     app.dependency_overrides.clear()
 
     app.dependency_overrides[
         get_current_admin
-    ] = lambda: AuthenticatedUser(
-        id=uuid4(),
-        email="admin@example.com",
-    )
+    ] = lambda: admin_user
 
     app.dependency_overrides[
         get_file_processing_service
@@ -51,7 +59,7 @@ def client(storage):
     app.dependency_overrides.clear()
 
 
-def test_admin_can_upload_txt_file(client, storage):
+def test_admin_can_upload_txt_file(client, storage, admin_user):
     conversation_id = uuid4()
 
     response = client.post(
@@ -76,11 +84,16 @@ def test_admin_can_upload_txt_file(client, storage):
     assert data["filename"] == "medical-notes.txt"
 
     assert "Medical report content" in storage.get_context(
-        conversation_id
+        owner_id=admin_user.id,
+        conversation_id=conversation_id,
     )
 
 
-def test_demo_user_cannot_upload_file(client, storage):
+def test_demo_user_cannot_upload_file(
+    client,
+    storage,
+    admin_user,
+):
     def deny_admin():
         raise HTTPException(
             status_code=403,
@@ -109,7 +122,10 @@ def test_demo_user_cannot_upload_file(client, storage):
 
     assert response.status_code == 403
 
-    assert storage.get_context(conversation_id) == ""
+    assert storage.get_context(
+        owner_id=admin_user.id,
+        conversation_id=conversation_id,
+    ) == ""
 
 
 def test_upload_rejects_unsupported_file(client):
@@ -150,3 +166,4 @@ def test_upload_rejects_oversized_file(client):
     assert response.json()["detail"] == (
         "File size exceeds the 10 MB limit."
     )
+    

@@ -1,24 +1,28 @@
-
 from uuid import uuid4
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.core.providers.base import ProviderResponse, ProviderToolCall
-
 from app.main import app
+
 from app.core.dependencies.auth import (
     AuthenticatedUser,
     get_current_user,
+    get_optional_admin,
 )
+
 from app.features.ai_assistant.api.routes import (
     get_ai_assistant_service,
 )
-from app.features.ai_assistant.schemas.chat import (
-    ChatResponse,
+
+from app.features.ai_assistant.api.dependencies import (
+    get_temporary_file_storage,
 )
+
+from app.features.ai_assistant.schemas.chat import ChatResponse
 
 from app.core.rate_limit import limiter
 
@@ -26,24 +30,24 @@ from app.features.ai_assistant.services.ai_assistant_service import (
     AIAssistantService,
 )
 
-from app.core.dependencies.auth import get_current_admin
-
-from app.features.ai_assistant.services.rag.knowledge_ingestion_service import (
-    KnowledgeIngestionService,
-)
-
-from app.features.ai_assistant.api.routes import (
-    get_knowledge_ingestion_service,
+from app.features.ai_assistant.services.temporary_file_storage import (
+    TemporaryFileStorage,
 )
 
 
 class FakeAIAssistantService:
+    def __init__(self):
+        self.received_file_context = None
+
     async def generate_response(
         self,
         request,
         user_id=None,
         ip_address=None,
+        file_context=None,
     ):
+        self.received_file_context = file_context
+
         return ChatResponse(
             conversation_id=request.conversation_id,
             message="A medical dashboard helps organize healthcare information.",
@@ -52,23 +56,31 @@ class FakeAIAssistantService:
         )
 
 
-class FakeKnowledgeIngestionService:
-    async def ingest_article(self, article_id):
-        return {
-            "article_id": str(article_id),
-            "title": "Diabetes Overview",
-            "chunks_created": 3,
-            "status": "indexed",
-        }
+@pytest.fixture
+def storage():
+    return TemporaryFileStorage()
 
 
 @pytest.fixture
-def client():
+def fake_ai_service():
+    return FakeAIAssistantService()
+
+
+@pytest.fixture
+def client(storage, fake_ai_service):
     app.dependency_overrides.clear()
 
     app.dependency_overrides[
         get_ai_assistant_service
-    ] = lambda: FakeAIAssistantService()
+    ] = lambda: fake_ai_service
+
+    app.dependency_overrides[
+        get_temporary_file_storage
+    ] = lambda: storage
+
+    app.dependency_overrides[
+        get_optional_admin
+    ] = lambda: None
 
     with TestClient(app) as test_client:
         yield test_client
@@ -194,8 +206,6 @@ def test_rate_limit_exceeded_is_audited(client):
 
 @pytest.mark.asyncio
 async def test_chat_returns_web_sources(client, monkeypatch):
-    from unittest.mock import AsyncMock, MagicMock
-
     user = AuthenticatedUser(
         id=uuid4(),
         email="demo@example.com",
@@ -338,3 +348,81 @@ async def test_chat_returns_web_sources(client, monkeypatch):
     )
 
     assert provider.generate.await_count == 2
+
+
+def test_admin_chat_receives_only_own_file_context(
+    client,
+    storage,
+    fake_ai_service,
+):
+    admin = AuthenticatedUser(
+        id=uuid4(),
+        email="admin@example.com",
+    )
+
+    conversation_id = uuid4()
+
+    storage.add_file(
+        owner_id=admin.id,
+        conversation_id=conversation_id,
+        filename="admin-report.txt",
+        text="Admin private medical report.",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: admin
+    app.dependency_overrides[get_optional_admin] = lambda: admin
+
+    response = client.post(
+        "/api/v1/ai-assistant/chat",
+        json={
+            "message": "Summarize my uploaded report.",
+            "conversation_id": str(conversation_id),
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert fake_ai_service.received_file_context is not None
+    assert "Admin private medical report." in (
+        fake_ai_service.received_file_context
+    )
+
+
+def test_demo_user_cannot_access_admin_file_context(
+    client,
+    storage,
+    fake_ai_service,
+):
+    admin = AuthenticatedUser(
+        id=uuid4(),
+        email="admin@example.com",
+    )
+
+    demo_user = AuthenticatedUser(
+        id=uuid4(),
+        email="demo@example.com",
+    )
+
+    conversation_id = uuid4()
+
+    storage.add_file(
+        owner_id=admin.id,
+        conversation_id=conversation_id,
+        filename="admin-report.txt",
+        text="Admin private medical report.",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: demo_user
+    app.dependency_overrides[get_optional_admin] = lambda: None
+
+    response = client.post(
+        "/api/v1/ai-assistant/chat",
+        json={
+            "message": "Read this uploaded report.",
+            "conversation_id": str(conversation_id),
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert fake_ai_service.received_file_context is None
