@@ -19,6 +19,7 @@ pypdf = "*"
 python-docx = "*"
 openpyxl = "*"
 python-pptx = "*"
+python-multipart = "*"
 
 [dev-packages]
 pytest = "*"

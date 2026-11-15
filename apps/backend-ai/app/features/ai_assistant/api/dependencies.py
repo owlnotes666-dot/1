@@ -7,6 +7,14 @@ from app.core.dependencies.auth import (
     get_optional_admin,
 )
 
+from app.features.ai_assistant.services.file_processing_service import (
+    FileProcessingService,
+)
+
+from app.features.ai_assistant.services.temporary_file_storage import (
+    TemporaryFileStorage,
+)
+
 from app.core.providers.tavily_search import (
     TavilySearchError,
     TavilySearchProvider,
@@ -167,3 +175,15 @@ def get_knowledge_chunk_repository(
     )
 
     return KnowledgeChunkRepository(client)
+
+
+# Shared in-memory storage for temporary conversation files.
+_temporary_file_storage = TemporaryFileStorage()
+
+
+def get_file_processing_service() -> FileProcessingService:
+    return FileProcessingService()
+
+
+def get_temporary_file_storage() -> TemporaryFileStorage:
+    return _temporary_file_storage

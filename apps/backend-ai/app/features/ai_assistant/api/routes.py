@@ -1,6 +1,7 @@
 
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, Form
 
 from app.core.dependencies.auth import (
     AuthenticatedUser,
@@ -11,6 +12,7 @@ from app.core.rate_limit import limiter
 from app.features.ai_assistant.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    FileUploadResponse,
 )
 from app.features.ai_assistant.services.ai_assistant_service import (
     AIAssistantService,
@@ -21,6 +23,16 @@ from app.features.ai_assistant.services.rag.knowledge_ingestion_service import (
 from app.features.ai_assistant.api.dependencies import (
     get_knowledge_ingestion_service,
     get_ai_assistant_service,
+    get_file_processing_service,
+    get_temporary_file_storage,
+)
+from app.features.ai_assistant.services.file_processing_service import (
+    FileProcessingService,
+    FileProcessingError,
+)
+
+from app.features.ai_assistant.services.temporary_file_storage import (
+    TemporaryFileStorage,
 )
 
 
@@ -55,6 +67,76 @@ async def chat(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invalid message.",
         ) from None
+
+
+@router.post(
+    "/files/upload",
+    response_model=FileUploadResponse,
+)
+@limiter.limit("10/minute")
+async def upload_file(
+    request: Request,
+    conversation_id: UUID = Form(...),
+    file: UploadFile = File(...),
+    current_admin: AuthenticatedUser = Depends(get_current_admin),
+    file_processor: FileProcessingService = Depends(
+        get_file_processing_service
+    ),
+    file_storage: TemporaryFileStorage = Depends(
+        get_temporary_file_storage
+    ),
+) -> FileUploadResponse:
+
+    filename = Path(file.filename or "").name
+
+    if not filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename.",
+        )
+
+    try:
+        content = await file.read(
+            file_processor.MAX_FILE_SIZE + 1
+        )
+
+        if len(content) > file_processor.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File size exceeds the 10 MB limit.",
+            )
+
+        extracted_text = file_processor.extract_text(
+            filename=filename,
+            content=content,
+        )
+
+        file_storage.add_file(
+            conversation_id=conversation_id,
+            filename=filename,
+            text=extracted_text,
+        )
+
+        return FileUploadResponse(
+            conversation_id=conversation_id,
+            filename=filename,
+            message="File uploaded and processed successfully.",
+        )
+
+    except FileProcessingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from None
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from None
+
+    finally:
+        await file.close()
 
 
 @router.post("/knowledge/{article_id}/ingest")

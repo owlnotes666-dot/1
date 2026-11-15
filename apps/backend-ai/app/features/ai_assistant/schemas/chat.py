@@ -55,5 +55,11 @@ class ChatResponse(BaseModel):
     usage: ChatUsage | None = None
 
     sources: list[ChatSource] = Field(default_factory=list)
-    
+
     web_sources: list[WebSource] = Field(default_factory=list)
+
+
+class FileUploadResponse(BaseModel):
+    conversation_id: UUID
+    filename: str
+    message: str
