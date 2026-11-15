@@ -83,6 +83,7 @@ function ChatWindow() {
               content={message.content}
               sources={message.sources}
               webSources={message.webSources}
+              animate={message.role === "assistant"}
             />
           ))
         )}

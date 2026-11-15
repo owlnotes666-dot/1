@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { ChatSource, WebSource } from "../../types";
 
 interface ChatMessageProps {
@@ -5,6 +8,7 @@ interface ChatMessageProps {
   content: string;
   sources?: ChatSource[];
   webSources?: WebSource[];
+  animate?: boolean;
 }
 
 function ChatMessage({
@@ -12,8 +16,67 @@ function ChatMessage({
   content,
   sources = [],
   webSources = [],
+  animate = false,
 }: ChatMessageProps) {
   const isUser = role === "user";
+
+  const [animation, setAnimation] = useState({
+    content: "",
+    displayed: "",
+    complete: false,
+  });
+
+  useEffect(() => {
+    if (!animate || !content) {
+      queueMicrotask(() => {
+        setAnimation({
+          content,
+          displayed: content,
+          complete: true,
+        });
+      });
+      return;
+    }
+
+    const words = content.match(/\S+\s*/g) ?? [content];
+    let currentIndex = 0;
+
+    queueMicrotask(() => {
+      setAnimation({
+        content,
+        displayed: "",
+        complete: false,
+      });
+    });
+
+    const interval = window.setInterval(() => {
+      currentIndex += 1;
+
+      const displayed = words.slice(0, currentIndex).join("");
+      const complete = currentIndex >= words.length;
+
+      setAnimation({
+        content,
+        displayed,
+        complete,
+      });
+
+      if (complete) {
+        window.clearInterval(interval);
+      }
+    }, 25);
+
+    return () => window.clearInterval(interval);
+  }, [content, animate]);
+
+  const isAnimationComplete =
+    !animate || (animation.content === content && animation.complete);
+
+  const displayedContent = animate
+    ? animation.content === content
+      ? animation.displayed
+      : ""
+    : content;
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -24,9 +87,11 @@ function ChatMessage({
             : "border border-slate-200 bg-white text-[#1E293B] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         }`}
       >
-        <p className="whitespace-pre-wrap text-sm leading-7">{content}</p>
+        <p className="whitespace-pre-wrap text-sm leading-7">
+          {displayedContent}
+        </p>
 
-        {!isUser && sources.length > 0 && (
+        {!isUser && isAnimationComplete && sources.length > 0 && (
           <div className="border-t border-slate-200 pt-3 dark:border-slate-700">
             <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
               Knowledge Base Sources
@@ -45,7 +110,7 @@ function ChatMessage({
           </div>
         )}
 
-        {!isUser && webSources.length > 0 && (
+        {!isUser && isAnimationComplete && webSources.length > 0 && (
           <div className="border-t border-slate-200 pt-3 dark:border-slate-700">
             <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
               Web Sources
