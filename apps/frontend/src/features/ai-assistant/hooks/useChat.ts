@@ -13,8 +13,6 @@ export function useChat() {
   return {
     sendMessage: mutation.mutateAsync,
 
-    streamMessage: aiAssistantApi.streamMessage,
-
     isPending: mutation.isPending,
     error: mutation.error,
     reset: mutation.reset,

@@ -43,15 +43,3 @@ class BaseAIProvider(ABC):
     ) -> ProviderResponse:
         """Generate an AI response, optionally using tools."""
         raise NotImplementedError
-
-    @abstractmethod
-    async def generate_stream(
-        self,
-        messages: list[ProviderMessage],
-        model: str,
-        max_tokens: int = 1024,
-        temperature: float = 0.7,
-        tools: list[dict[str, Any]] | None = None,
-    ) -> ProviderResponse:
-        """Generate a response using provider-side streaming."""
-        raise NotImplementedError

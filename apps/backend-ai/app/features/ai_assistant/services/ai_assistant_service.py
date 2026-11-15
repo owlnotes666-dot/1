@@ -90,7 +90,7 @@ class AIAssistantService:
     async def _generate_with_tools(
         self,
         messages: list[ProviderMessage],
-        use_stream: bool = False,
+
     ):
         tools = (
             get_admin_tools()
@@ -110,13 +110,7 @@ class AIAssistantService:
 
             llm_started = time.perf_counter()
 
-            generate_method = (
-                self.provider.generate_stream
-                if use_stream
-                else self.provider.generate
-            )
-
-            response = await generate_method(
+            response = await self.provider.generate(
                 messages=messages,
                 model=settings.ai_model,
                 max_tokens=1024,
@@ -297,7 +291,6 @@ class AIAssistantService:
         request: ChatRequest,
         user_id: UUID | None = None,
         ip_address: str | None = None,
-        use_provider_stream: bool = False,
     ) -> ChatResponse:
         request_started = time.perf_counter()
 
@@ -596,8 +589,7 @@ class AIAssistantService:
 
         try:
             provider_response, aggregated_usage, web_sources = (
-                await self._generate_with_tools(messages,
-                                                use_stream=use_provider_stream,)
+                await self._generate_with_tools(messages)
             )
 
         except ProviderAuthenticationError:
