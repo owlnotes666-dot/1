@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
-import type { ChatRequest, ChatResponse, FileUploadResponse } from "../types";
+import type {
+  ChatRequest,
+  ChatResponse,
+  FileUploadResponse,
+  ConversationSummary,
+  ConversationHistory,
+} from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -78,5 +84,61 @@ export const aiAssistantApi = {
     }
 
     return response.json() as Promise<FileUploadResponse>;
+  },
+
+  async listConversations(): Promise<ConversationSummary[]> {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/ai-assistant/conversations`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Unable to retrieve conversations.");
+    }
+
+    return response.json();
+  },
+
+  async getConversation(conversationId: string): Promise<ConversationHistory> {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/ai-assistant/conversations/${conversationId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Unable to retrieve conversation.");
+    }
+
+    return response.json();
+  },
+
+  async deleteConversation(conversationId: string): Promise<void> {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/ai-assistant/conversations/${conversationId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Unable to delete conversation.");
+    }
   },
 };
