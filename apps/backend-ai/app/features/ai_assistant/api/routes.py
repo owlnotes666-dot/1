@@ -1,5 +1,6 @@
 from uuid import UUID
 from pathlib import Path
+from fastapi import HTTPException
 
 from fastapi import (
     APIRouter,
@@ -226,4 +227,81 @@ async def ingest_all_knowledge_articles(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Bulk knowledge ingestion failed.",
+        ) from None
+
+
+@router.get("/conversations")
+async def list_conversations(
+    current_admin: AuthenticatedUser = Depends(get_current_admin),
+    ai_service: AIAssistantService = Depends(
+        get_ai_assistant_service
+    ),
+):
+    repository = ai_service.conversation_repository
+
+    if repository is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required.",
+        )
+
+    try:
+        return repository.list_conversations(
+            owner_id=current_admin.id
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve conversations.",
+        ) from None
+
+
+@router.get("/conversations/{conversation_id}")
+async def get_conversation(
+    conversation_id: UUID,
+    current_admin: AuthenticatedUser = Depends(get_current_admin),
+    ai_service: AIAssistantService = Depends(
+        get_ai_assistant_service
+    ),
+):
+    repository = ai_service.conversation_repository
+
+    if repository is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required.",
+        )
+
+    try:
+        conversation = repository.get_conversation(
+            conversation_id
+        )
+
+        if (
+            conversation is None
+            or str(conversation.get("owner_id"))
+            != str(current_admin.id)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found.",
+            )
+
+        messages = repository.get_messages(
+            conversation_id
+        )
+
+        return {
+            "conversation": conversation,
+            "messages": messages,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve conversation.",
         ) from None
