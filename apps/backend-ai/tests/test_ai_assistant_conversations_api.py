@@ -173,3 +173,74 @@ def test_conversation_api_requires_admin(repository):
     app.dependency_overrides.clear()
 
     assert response.status_code in (401, 403)
+
+
+def test_admin_can_delete_own_conversation(
+    client,
+    admin,
+    repository,
+):
+    conversation_id = uuid4()
+
+    repository.get_conversation.return_value = {
+        "id": str(conversation_id),
+        "owner_id": str(admin.id),
+        "title": "Test conversation",
+    }
+
+    response = client.delete(
+        f"/api/v1/ai-assistant/conversations/{conversation_id}"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == (
+        "Conversation deleted successfully."
+    )
+
+    repository.delete_conversation.assert_called_once_with(
+        conversation_id=conversation_id,
+        owner_id=admin.id,
+    )
+
+
+def test_admin_cannot_delete_another_users_conversation(
+    client,
+    repository,
+):
+    conversation_id = uuid4()
+
+    repository.get_conversation.return_value = {
+        "id": str(conversation_id),
+        "owner_id": str(uuid4()),
+        "title": "Private conversation",
+    }
+
+    response = client.delete(
+        f"/api/v1/ai-assistant/conversations/{conversation_id}"
+    )
+
+    assert response.status_code == 404
+    repository.delete_conversation.assert_not_called()
+
+
+def test_admin_cannot_delete_nonexistent_conversation(
+    client,
+    repository,
+):
+    conversation_id = uuid4()
+    repository.get_conversation.return_value = None
+
+    response = client.delete(
+        f"/api/v1/ai-assistant/conversations/{conversation_id}"
+    )
+
+    assert response.status_code == 404
+    repository.delete_conversation.assert_not_called()
+
+
+def test_invalid_conversation_id_delete_is_rejected(client):
+    response = client.delete(
+        "/api/v1/ai-assistant/conversations/not-a-uuid"
+    )
+
+    assert response.status_code == 422

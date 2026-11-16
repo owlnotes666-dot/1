@@ -305,3 +305,53 @@ async def get_conversation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve conversation.",
         ) from None
+
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: UUID,
+    current_admin: AuthenticatedUser = Depends(get_current_admin),
+    ai_service: AIAssistantService = Depends(
+        get_ai_assistant_service
+    ),
+):
+    repository = ai_service.conversation_repository
+
+    if repository is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required.",
+        )
+
+    try:
+        conversation = repository.get_conversation(
+            conversation_id
+        )
+
+        if (
+            conversation is None
+            or str(conversation.get("owner_id"))
+            != str(current_admin.id)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found.",
+            )
+
+        repository.delete_conversation(
+            conversation_id=conversation_id,
+            owner_id=current_admin.id,
+        )
+
+        return {
+            "message": "Conversation deleted successfully."
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to delete conversation.",
+        ) from None

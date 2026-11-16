@@ -126,3 +126,17 @@ class ConversationRepository:
             .eq("id", str(conversation_id))
             .execute()
         )
+
+    def delete_conversation(
+        self,
+        conversation_id: UUID,
+        owner_id: UUID,
+    ) -> None:
+        (
+            self.client.schema("medical")
+            .table("conversations")
+            .delete()
+            .eq("id", str(conversation_id))
+            .eq("owner_id", str(owner_id))
+            .execute()
+        )
