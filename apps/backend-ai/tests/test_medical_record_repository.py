@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.features.ai_assistant.repositories.database.medical_record_repository import (
     MedicalRecordRepository,
 )
@@ -37,9 +39,8 @@ def test_count_records_by_status():
     query.eq.assert_called_once_with("status", "Pending")
 
 
-def test_count_records_returns_zero_when_count_is_none():
+def test_count_records_rejects_missing_exact_count():
     repository, _ = create_repository(None)
 
-    result = repository.count_records()
-
-    assert result == 0
+    with pytest.raises(RuntimeError, match="exact row count"):
+        repository.count_records()

@@ -1,5 +1,5 @@
+import re
 from typing import Any
-
 
 DATABASE_TOOLS: list[dict[str, Any]] = [
     {
@@ -154,10 +154,72 @@ WEB_SEARCH_TOOLS: list[dict[str, Any]] = [
     },
 ]
 
+STATISTICS_TERMS = (
+    re.compile(r"\bhow many\b", re.IGNORECASE),
+    re.compile(r"\bcount\b", re.IGNORECASE),
+    re.compile(r"\bnumber of\b", re.IGNORECASE),
+    re.compile(r"\btotal\b", re.IGNORECASE),
+    re.compile(r"\bstatistics?\b", re.IGNORECASE),
+    re.compile(r"\bstats\b", re.IGNORECASE),
+)
+
+PERSIAN_STATISTICS_TERMS = ("چند", "تعداد", "آمار", "شمار")
+
+DATABASE_TOOL_TERMS = {
+    "get_patient_statistics": (
+        re.compile(r"\bpatients?\b", re.IGNORECASE),
+        re.compile(r"بیمار"),
+    ),
+    "get_doctor_statistics": (
+        re.compile(r"\bdoctors?\b", re.IGNORECASE),
+        re.compile(r"\bphysicians?\b", re.IGNORECASE),
+        re.compile(r"دکتر|پزشک"),
+    ),
+    "get_appointment_statistics": (
+        re.compile(r"\bappointments?\b", re.IGNORECASE),
+        re.compile(r"\bvisits?\b", re.IGNORECASE),
+        re.compile(r"نوبت|ویزیت"),
+    ),
+    "get_staff_statistics": (
+        re.compile(r"\bstaff\b", re.IGNORECASE),
+        re.compile(r"\bemployees?\b", re.IGNORECASE),
+        re.compile(r"کارمند|پرسنل"),
+    ),
+    "get_medical_record_statistics": (
+        re.compile(r"\bmedical records?\b", re.IGNORECASE),
+        re.compile(r"\brecords?\b", re.IGNORECASE),
+        re.compile(r"پرونده"),
+    ),
+}
+
 
 def get_database_tools() -> list[dict[str, Any]]:
     """Return the available read-only database tool definitions."""
     return DATABASE_TOOLS.copy()
+
+
+def get_database_tools_for_question(
+    question: str,
+) -> list[dict[str, Any]] | None:
+    """Return matching aggregate tools for a count question, if identifiable."""
+    has_statistics_intent = (
+        any(term.search(question) for term in STATISTICS_TERMS)
+        or any(term in question for term in PERSIAN_STATISTICS_TERMS)
+    )
+    if not has_statistics_intent:
+        return None
+
+    matching_names = {
+        name
+        for name, terms in DATABASE_TOOL_TERMS.items()
+        if any(term.search(question) for term in terms)
+    }
+
+    return [
+        tool
+        for tool in get_database_tools()
+        if tool["function"]["name"] in matching_names
+    ] or None
 
 
 def get_web_search_tools() -> list[dict[str, Any]]:

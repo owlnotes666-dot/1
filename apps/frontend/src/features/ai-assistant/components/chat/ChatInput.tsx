@@ -1,3 +1,4 @@
+// ChatInput.tsx
 "use client";
 
 import {
@@ -7,6 +8,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from "react";
+import { Paperclip, Send, Loader2, FileText } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -58,24 +60,31 @@ function ChatInput({
     event.target.value = "";
   };
 
+  const isDisabled = isPending || isUploading;
+
   return (
     <div className="space-y-3">
+      {/* Uploaded files chips */}
       {uploadedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 px-1">
           {uploadedFiles.map((filename, index) => (
             <span
               key={`${filename}-${index}`}
-              className="rounded-lg bg-teal-50 px-3 py-1.5 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/60 bg-teal-50/80 px-3 py-1.5 text-xs font-medium text-teal-800 shadow-sm backdrop-blur-sm dark:border-teal-800/50 dark:bg-teal-950/50 dark:text-teal-200"
             >
-              📎 {filename}
+              <FileText className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              <span className="max-w-[140px] truncate sm:max-w-[200px]">
+                {filename}
+              </span>
             </span>
           ))}
         </div>
       )}
 
+      {/* Input form */}
       <form
         onSubmit={handleSubmit}
-        className="flex items-end gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        className="group relative flex items-end gap-2 rounded-2xl border border-slate-200/80 bg-white/90 p-2 shadow-sm transition-shadow focus-within:border-teal-300/70 focus-within:shadow-md focus-within:shadow-teal-500/5 dark:border-slate-700/80 dark:bg-slate-800/90 dark:focus-within:border-teal-700/60 sm:gap-3 sm:p-2.5"
       >
         {isAdmin && (
           <>
@@ -91,11 +100,12 @@ function ChatInput({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isPending || isUploading}
+              disabled={isDisabled}
               title="Attach files"
-              className="rounded-xl border border-slate-200 px-3 py-2.5 text-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              aria-label="Attach files"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-all hover:bg-slate-100 hover:text-teal-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700/70 dark:hover:text-teal-400"
             >
-              📎
+              <Paperclip className="h-5 w-5" />
             </button>
           </>
         )}
@@ -107,16 +117,29 @@ function ChatInput({
           placeholder="Ask your medical assistant..."
           rows={1}
           maxLength={8000}
-          disabled={isPending || isUploading}
-          className="max-h-36 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-[#1E293B] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white"
+          disabled={isDisabled}
+          className="max-h-36 min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2.5 text-sm leading-relaxed text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-100 dark:placeholder:text-slate-500 sm:px-2"
         />
 
         <button
           type="submit"
-          disabled={!message.trim() || isPending || isUploading}
-          className="rounded-xl bg-[#0F9D91] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0c8178] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!message.trim() || isDisabled}
+          aria-label={isPending ? "Sending" : isUploading ? "Uploading" : "Send message"}
+          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-3.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:bg-teal-600 dark:hover:bg-teal-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 sm:px-4"
         >
-          {isPending ? "Sending..." : isUploading ? "Uploading..." : "Send"}
+          {isPending || isUploading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="hidden sm:inline">
+                {isPending ? "Sending..." : "Uploading..."}
+              </span>
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4" />
+              <span className="hidden sm:inline">Send</span>
+            </>
+          )}
         </button>
       </form>
     </div>

@@ -1,9 +1,9 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 
-from app.core.providers.base import ProviderResponse
+from app.core.providers.base import ProviderResponse, ProviderToolCall
 from app.features.ai_assistant.schemas.chat import ChatRequest
 from app.features.ai_assistant.services.ai_assistant_service import (
     AIAssistantService,
@@ -87,6 +87,52 @@ async def test_successful_ai_response(service, mock_provider):
     assert response.usage.total_tokens == 50
 
     mock_provider.generate.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_admin_statistics_prompt_requires_authoritative_tool_results(
+    service,
+    mock_provider,
+):
+    service.tool_executor = MagicMock()
+    service.tool_executor.execute.return_value = {"total": 6}
+    mock_provider.generate.side_effect = [
+        ProviderResponse(
+            content=None,
+            model="test-model",
+            tool_calls=[
+                ProviderToolCall(
+                    id="doctor-count",
+                    name="get_doctor_statistics",
+                    arguments={"specialty": None, "status": "Active"},
+                )
+            ],
+        ),
+        ProviderResponse(
+            content="There are 6 active doctors.",
+            model="test-model",
+        ),
+    ]
+
+    response = await service.generate_response(
+        ChatRequest(
+            message="How many active doctors do we have right now?"
+        )
+    )
+
+    assert response.message == "There are 6 active doctors."
+    call_args = mock_provider.generate.await_args_list[0].kwargs
+    messages = call_args["messages"]
+    system_prompt = messages[0].content
+
+    assert call_args["tool_choice"] == "required"
+    assert "Use the available database tools" in system_prompt
+    assert "call the appropriate tool before answering" in system_prompt
+    assert "Report the returned total exactly as provided." in system_prompt
+    assert (
+        "Never claim to have accessed patient records or databases."
+        not in system_prompt
+    )
 
 
 @pytest.mark.anyio

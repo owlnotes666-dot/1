@@ -1,6 +1,7 @@
 import json
-import httpx
+from typing import Any
 
+import httpx
 from openai import (
     APIConnectionError,
     APIStatusError,
@@ -49,7 +50,8 @@ class OpenRouterProvider(BaseAIProvider):
         model: str,
         max_tokens: int = 1024,
         temperature: float = 0.7,
-        tools: list[dict] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
     ) -> ProviderResponse:
         try:
             formatted_messages = []
@@ -89,7 +91,7 @@ class OpenRouterProvider(BaseAIProvider):
 
             if tools:
                 request_options["tools"] = tools
-                request_options["tool_choice"] = "auto"
+                request_options["tool_choice"] = tool_choice or "auto"
 
             response = await self.client.chat.completions.create(
                 **request_options

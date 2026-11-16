@@ -1,5 +1,9 @@
 from supabase import Client
 
+from app.features.ai_assistant.repositories.database.counting import (
+    require_exact_count,
+)
+
 
 class MedicalRecordRepository:
     """Read-only repository for medical record statistics."""
@@ -22,4 +26,4 @@ class MedicalRecordRepository:
 
         response = query.execute()
 
-        return response.count or 0
+        return require_exact_count(response.count)

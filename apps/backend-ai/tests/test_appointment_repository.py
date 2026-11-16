@@ -1,6 +1,8 @@
 from datetime import date
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.features.ai_assistant.repositories.database.appointment_repository import (
     AppointmentRepository,
 )
@@ -68,9 +70,8 @@ def test_count_appointments_by_status_and_date():
     query.eq.assert_any_call("appointment_date", "2026-11-13")
 
 
-def test_count_appointments_returns_zero_when_count_is_none():
+def test_count_appointments_rejects_missing_exact_count():
     repository, _ = create_repository(None)
 
-    result = repository.count_appointments()
-
-    assert result == 0
+    with pytest.raises(RuntimeError, match="exact row count"):
+        repository.count_appointments()

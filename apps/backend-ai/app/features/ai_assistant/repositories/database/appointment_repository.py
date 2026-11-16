@@ -2,6 +2,10 @@ from datetime import date
 
 from supabase import Client
 
+from app.features.ai_assistant.repositories.database.counting import (
+    require_exact_count,
+)
+
 
 class AppointmentRepository:
     """Read-only repository for appointment statistics."""
@@ -34,4 +38,4 @@ class AppointmentRepository:
 
         response = query.execute()
 
-        return response.count or 0
+        return require_exact_count(response.count)

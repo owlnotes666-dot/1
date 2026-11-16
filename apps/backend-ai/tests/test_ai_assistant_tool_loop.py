@@ -66,6 +66,101 @@ async def test_admin_can_execute_database_tool(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_doctor_count_question_requires_doctor_statistics_tool(
+    monkeypatch,
+):
+    provider = MagicMock()
+    provider.generate = AsyncMock(
+        side_effect=[
+            ProviderResponse(
+                content=None,
+                model="test-model",
+                tool_calls=[
+                    ProviderToolCall(
+                        id="doctor-count",
+                        name="get_doctor_statistics",
+                        arguments={"specialty": None, "status": "Active"},
+                    )
+                ],
+            ),
+            ProviderResponse(
+                content="There are 6 active doctors.",
+                model="test-model",
+            ),
+        ]
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.get_ai_provider",
+        lambda: provider,
+    )
+
+    tool_executor = MagicMock()
+    tool_executor.execute.return_value = {"total": 6}
+    service = AIAssistantService(tool_executor=tool_executor)
+
+    from app.core.providers.base import ProviderMessage
+
+    messages = [
+        ProviderMessage(
+            role="user",
+            content="چندتا دکتر active داریم الان؟",
+        )
+    ]
+
+    response, _, _ = await service._generate_with_tools(messages)
+
+    assert response.content == "There are 6 active doctors."
+    tool_executor.execute.assert_called_once_with(
+        tool_name="get_doctor_statistics",
+        arguments={"specialty": None, "status": "Active"},
+    )
+
+    first_call = provider.generate.await_args_list[0].kwargs
+    second_call = provider.generate.await_args_list[1].kwargs
+    assert first_call["tool_choice"] == "required"
+    assert [
+        tool["function"]["name"] for tool in first_call["tools"]
+    ] == ["get_doctor_statistics"]
+    assert second_call["tool_choice"] == "auto"
+
+
+@pytest.mark.asyncio
+async def test_statistics_question_cannot_be_answered_without_required_tool(
+    monkeypatch,
+):
+    from app.core.providers.base import ProviderMessage
+    from app.core.providers.exceptions import ProviderResponseError
+
+    provider = MagicMock()
+    provider.generate = AsyncMock(
+        return_value=ProviderResponse(
+            content="There are 0 active doctors.",
+            model="test-model",
+        )
+    )
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.get_ai_provider",
+        lambda: provider,
+    )
+
+    service = AIAssistantService(tool_executor=MagicMock())
+    messages = [
+        ProviderMessage(
+            role="user",
+            content="How many active doctors do we have?",
+        )
+    ]
+
+    with pytest.raises(
+        ProviderResponseError,
+        match="did not call a required database tool",
+    ):
+        await service._generate_with_tools(messages)
+
+
+@pytest.mark.asyncio
 async def test_demo_cannot_access_database_tools(monkeypatch):
     provider = MagicMock()
     provider.generate = AsyncMock(

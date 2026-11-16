@@ -45,29 +45,32 @@ async def test_generate_returns_tool_calls():
         )
     )
 
-    result = await provider.generate(
-        messages=[
-            ProviderMessage(
-                role="user",
-                content="How many active patients do we have?",
-            )
-        ],
-        model="test-model",
-        tools=[
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_patient_statistics",
-                    "description": "Get patient statistics.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "status": {"type": "string"},
-                        },
+    messages = [
+        ProviderMessage(
+            role="user",
+            content="How many active patients do we have?",
+        )
+    ]
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_patient_statistics",
+                "description": "Get patient statistics.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "status": {"type": "string"},
                     },
                 },
-            }
-        ],
+            },
+        }
+    ]
+
+    result = await provider.generate(
+        messages=messages,
+        model="test-model",
+        tools=tools,
     )
 
     assert result.content is None
@@ -83,6 +86,18 @@ async def test_generate_returns_tool_calls():
 
     assert request_args["tool_choice"] == "auto"
     assert len(request_args["tools"]) == 1
+
+    await provider.generate(
+        messages=messages,
+        model="test-model",
+        tools=tools,
+        tool_choice="required",
+    )
+
+    required_request_args = (
+        provider.client.chat.completions.create.await_args.kwargs
+    )
+    assert required_request_args["tool_choice"] == "required"
 
 
 @pytest.mark.asyncio

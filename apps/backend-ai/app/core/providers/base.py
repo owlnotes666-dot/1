@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-
 MessageRole = Literal["system", "user", "assistant", "tool"]
 
 
@@ -40,6 +39,7 @@ class BaseAIProvider(ABC):
         max_tokens: int = 1024,
         temperature: float = 0.7,
         tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
     ) -> ProviderResponse:
         """Generate an AI response, optionally using tools."""
         raise NotImplementedError

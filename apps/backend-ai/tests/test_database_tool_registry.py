@@ -1,8 +1,8 @@
 from app.features.ai_assistant.services.database_agent.tool_registry import (
     DATABASE_TOOLS,
     get_database_tools,
+    get_database_tools_for_question,
 )
-
 
 EXPECTED_TOOLS = {
     "get_patient_statistics",
@@ -66,3 +66,14 @@ def test_registry_does_not_expose_write_operations():
     }
 
     assert tool_names.isdisjoint(forbidden_operations)
+
+
+def test_persian_doctor_count_question_selects_doctor_tool():
+    tools = get_database_tools_for_question(
+        "چندتا دکتر active داریم الان؟"
+    )
+
+    assert tools is not None
+    assert [tool["function"]["name"] for tool in tools] == [
+        "get_doctor_statistics"
+    ]

@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.features.ai_assistant.repositories.database.staff_repository import (
     StaffRepository,
 )
@@ -60,9 +62,8 @@ def test_count_staff_by_role_and_status():
     query.eq.assert_any_call("status", "Active")
 
 
-def test_count_staff_returns_zero_when_count_is_none():
+def test_count_staff_rejects_missing_exact_count():
     repository, _ = create_repository(None)
 
-    result = repository.count_staff()
-
-    assert result == 0
+    with pytest.raises(RuntimeError, match="exact row count"):
+        repository.count_staff()
