@@ -14,14 +14,20 @@ class ConversationRepository:
         self,
         owner_id: UUID,
         title: str = "New conversation",
+        conversation_id: UUID | None = None,
     ) -> dict[str, Any]:
+        conversation_data = {
+            "owner_id": str(owner_id),
+            "title": title[:100],
+        }
+
+        if conversation_id is not None:
+            conversation_data["id"] = str(conversation_id)
+
         response = (
             self.client.schema("medical")
             .table("conversations")
-            .insert({
-                "owner_id": str(owner_id),
-                "title": title[:100],
-            })
+            .insert(conversation_data)
             .execute()
         )
 
