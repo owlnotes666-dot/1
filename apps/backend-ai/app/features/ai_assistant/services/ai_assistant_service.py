@@ -81,12 +81,14 @@ class AIAssistantService:
         context_builder: ContextBuilder | None = None,
         tool_executor: ToolExecutor | None = None,
         web_search_executor: WebSearchExecutor | None = None,
+        conversation_repository=None,
     ):
         self.provider = get_ai_provider()
         self.retrieval_service = retrieval_service
         self.context_builder = context_builder
         self.tool_executor = tool_executor
         self.web_search_executor = web_search_executor
+        self.conversation_repository = conversation_repository
 
     async def _generate_with_tools(
         self,

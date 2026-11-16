@@ -7,6 +7,7 @@ from app.core.dependencies.auth import (
     get_optional_admin,
 )
 
+
 from app.features.ai_assistant.services.file_processing_service import (
     FileProcessingService,
 )
@@ -72,6 +73,10 @@ from app.features.ai_assistant.services.rag.context_builder import (
     ContextBuilder,
 )
 
+from app.features.ai_assistant.repositories.conversation_repository import (
+    ConversationRepository,
+)
+
 
 def get_knowledge_ingestion_service(
     current_admin: AuthenticatedUser = Depends(get_current_admin),
@@ -115,6 +120,11 @@ def get_ai_assistant_service(
         current_user.access_token.get_secret_value()
     )
 
+    conversation_repository = None
+
+    if current_admin is not None:
+        conversation_repository = ConversationRepository(client)
+
     chunk_repository = KnowledgeChunkRepository(client)
 
     retrieval_service = RetrievalService(
@@ -145,6 +155,7 @@ def get_ai_assistant_service(
             context_builder=context_builder,
             tool_executor=tool_executor,
             web_search_executor=web_search_executor,
+            conversation_repository=conversation_repository,
         )
 
     except ProviderConfigurationError:
