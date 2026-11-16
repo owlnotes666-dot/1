@@ -2,6 +2,7 @@ from uuid import UUID
 import time
 import logging
 import json
+from datetime import datetime, timezone
 
 from app.features.ai_assistant.services.database_agent.tool_registry import (
     get_admin_tools,
@@ -401,6 +402,48 @@ class AIAssistantService:
             )
 
         safe_user_message = pii_check.redacted_content
+
+        conversation_id = request.conversation_id
+
+        if self.conversation_repository is not None:
+            try:
+                if user_id is None:
+                    raise ValueError("Authenticated user is required.")
+
+                if conversation_id is not None:
+                    conversation = (
+                        self.conversation_repository.get_conversation(
+                            conversation_id
+                        )
+                    )
+
+                    if (
+                        conversation is None
+                        or str(conversation.get("owner_id")) != str(user_id)
+                    ):
+                        raise ValueError("Conversation not found.")
+
+                else:
+                    conversation = (
+                        self.conversation_repository.create_conversation(
+                            owner_id=user_id,
+                            title=safe_user_message[:100],
+                        )
+                    )
+                    conversation_id = UUID(str(conversation["id"]))
+
+            except ValueError:
+                raise
+
+            except Exception:
+                logger.exception(
+                    "Failed to initialize admin conversation."
+                )
+                return self._provider_error_response(
+                    "Unable to access conversation history. Please try again.",
+                    "conversation-initialization-failed",
+                    request.conversation_id,
+                )
 
         try:
             injection_started = time.perf_counter()
@@ -803,13 +846,52 @@ class AIAssistantService:
             for result in retrieved_chunks
         ]
 
+        if self.conversation_repository is not None:
+            try:
+                self.conversation_repository.save_message(
+                    conversation_id=conversation_id,
+                    role="user",
+                    content=safe_user_message,
+                )
+
+                self.conversation_repository.save_message(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=output_check.content,
+                    sources=[
+                        source.model_dump(mode="json")
+                        for source in sources
+                    ],
+                    web_sources=web_sources,
+                    usage=(
+                        usage.model_dump(mode="json")
+                        if usage is not None
+                        else None
+                    ),
+                )
+
+                self.conversation_repository.update_conversation(
+                    conversation_id,
+                    updated_at=datetime.now(timezone.utc).isoformat(),
+                )
+
+            except Exception:
+                logger.exception(
+                    "Failed to persist admin conversation messages."
+                )
+                return self._provider_error_response(
+                    "Unable to save this conversation. Please try again.",
+                    "conversation-persistence-failed",
+                    conversation_id,
+                )
+
         logger.info(
             "AI Performance | stage=total_request | duration_ms=%.2f",
             (time.perf_counter() - request_started) * 1000,
         )
 
         return ChatResponse(
-            conversation_id=request.conversation_id,
+            conversation_id=conversation_id,
             message=output_check.content,
             provider=settings.ai_provider,
             model=provider_response.model,
