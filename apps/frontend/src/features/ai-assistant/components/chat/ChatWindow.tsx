@@ -161,12 +161,18 @@ function ChatWindow() {
       content: message,
     };
 
+    const history = messages.slice(-20).map(({ role, content }) => ({
+      role,
+      content,
+    }));
+
     setMessages((previous) => [...previous, userMessage]);
 
     try {
       const response = await sendMessage({
         message,
         conversation_id: currentConversationId,
+        history,
       });
 
       if (response.conversation_id) {
