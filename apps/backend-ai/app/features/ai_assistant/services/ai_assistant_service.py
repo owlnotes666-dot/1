@@ -417,10 +417,13 @@ class AIAssistantService:
                         )
                     )
 
-                    if (
-                        conversation is None
-                        or str(conversation.get("owner_id")) != str(user_id)
-                    ):
+                    if conversation is None:
+                        self.conversation_repository.create_conversation(
+                            owner_id=user_id,
+                            title=safe_user_message[:100],
+                            conversation_id=conversation_id,
+                        )
+                    elif str(conversation.get("owner_id")) != str(user_id):
                         raise ValueError("Conversation not found.")
 
                 else:

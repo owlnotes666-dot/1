@@ -211,7 +211,7 @@ async def test_admin_cannot_access_another_users_conversation(
 
 
 @pytest.mark.asyncio
-async def test_admin_cannot_continue_nonexistent_conversation(
+async def test_admin_creates_conversation_with_client_generated_id(
     admin_id,
     conversation_id,
     repository,
@@ -224,15 +224,19 @@ async def test_admin_cannot_continue_nonexistent_conversation(
         conversation_repository=repository,
     )
 
-    with pytest.raises(ValueError, match="Conversation not found"):
-        await service.generate_response(
-            request=ChatRequest(
-                message="Continue missing conversation.",
-                conversation_id=conversation_id,
-            ),
-            user_id=admin_id,
-        )
+    response = await service.generate_response(
+        request=ChatRequest(
+            message="Start a conversation.",
+            conversation_id=conversation_id,
+        ),
+        user_id=admin_id,
+    )
 
-    repository.create_conversation.assert_not_called()
-    repository.save_message.assert_not_called()
-    provider.generate.assert_not_awaited()
+    assert response.conversation_id == conversation_id
+    repository.create_conversation.assert_called_once_with(
+        owner_id=admin_id,
+        title="Patient information was redacted.",
+        conversation_id=conversation_id,
+    )
+    assert repository.save_message.call_count == 2
+    provider.generate.assert_awaited_once()

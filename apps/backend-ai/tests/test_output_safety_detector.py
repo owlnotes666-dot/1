@@ -42,6 +42,26 @@ async def test_classifier_allows_safe_medical_response():
 
 
 @pytest.mark.anyio
+async def test_classifier_allows_non_identifying_patient_statistics():
+    provider = AsyncMock()
+    provider.generate.return_value = ProviderResponse(
+        content="ALLOW",
+        model="test-model",
+    )
+
+    result = await detect_unsafe_output(
+        "There are 25 active patients.",
+        provider,
+    )
+
+    assert result is False
+    classifier_prompt = provider.generate.await_args.kwargs["messages"][0].content
+    assert "Aggregate counts that do not identify an individual" in (
+        classifier_prompt
+    )
+
+
+@pytest.mark.anyio
 async def test_classifier_rejects_unexpected_response():
     provider = AsyncMock()
     provider.generate.return_value = ProviderResponse(
