@@ -324,24 +324,16 @@ async def delete_conversation(
         )
 
     try:
-        conversation = repository.get_conversation(
-            conversation_id
+        deleted = repository.delete_conversation(
+            conversation_id=conversation_id,
+            owner_id=current_admin.id,
         )
 
-        if (
-            conversation is None
-            or str(conversation.get("owner_id"))
-            != str(current_admin.id)
-        ):
+        if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conversation not found.",
             )
-
-        repository.delete_conversation(
-            conversation_id=conversation_id,
-            owner_id=current_admin.id,
-        )
 
         return {
             "message": "Conversation deleted successfully."

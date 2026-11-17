@@ -182,11 +182,7 @@ def test_admin_can_delete_own_conversation(
 ):
     conversation_id = uuid4()
 
-    repository.get_conversation.return_value = {
-        "id": str(conversation_id),
-        "owner_id": str(admin.id),
-        "title": "Test conversation",
-    }
+    repository.delete_conversation.return_value = True
 
     response = client.delete(
         f"/api/v1/ai-assistant/conversations/{conversation_id}"
@@ -201,26 +197,26 @@ def test_admin_can_delete_own_conversation(
         conversation_id=conversation_id,
         owner_id=admin.id,
     )
+    repository.get_conversation.assert_not_called()
 
 
 def test_admin_cannot_delete_another_users_conversation(
     client,
+    admin,
     repository,
 ):
     conversation_id = uuid4()
-
-    repository.get_conversation.return_value = {
-        "id": str(conversation_id),
-        "owner_id": str(uuid4()),
-        "title": "Private conversation",
-    }
+    repository.delete_conversation.return_value = False
 
     response = client.delete(
         f"/api/v1/ai-assistant/conversations/{conversation_id}"
     )
 
     assert response.status_code == 404
-    repository.delete_conversation.assert_not_called()
+    repository.delete_conversation.assert_called_once_with(
+        conversation_id=conversation_id,
+        owner_id=admin.id,
+    )
 
 
 def test_admin_cannot_delete_nonexistent_conversation(
@@ -228,14 +224,14 @@ def test_admin_cannot_delete_nonexistent_conversation(
     repository,
 ):
     conversation_id = uuid4()
-    repository.get_conversation.return_value = None
+    repository.delete_conversation.return_value = False
 
     response = client.delete(
         f"/api/v1/ai-assistant/conversations/{conversation_id}"
     )
 
     assert response.status_code == 404
-    repository.delete_conversation.assert_not_called()
+    repository.delete_conversation.assert_called_once()
 
 
 def test_invalid_conversation_id_delete_is_rejected(client):

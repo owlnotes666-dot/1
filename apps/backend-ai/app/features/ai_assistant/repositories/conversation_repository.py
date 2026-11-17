@@ -131,8 +131,8 @@ class ConversationRepository:
         self,
         conversation_id: UUID,
         owner_id: UUID,
-    ) -> None:
-        (
+    ) -> bool:
+        response = (
             self.client.schema("medical")
             .table("conversations")
             .delete()
@@ -140,3 +140,5 @@ class ConversationRepository:
             .eq("owner_id", str(owner_id))
             .execute()
         )
+
+        return bool(response.data)

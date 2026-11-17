@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { aiAssistantApi } from "../api/aiAssistantApi";
+import type { ConversationSummary } from "../types";
 
 const conversationKeys = {
   all: ["ai-assistant", "conversations"] as const,
@@ -42,6 +43,36 @@ export function useDeleteConversation() {
   const mutation = useMutation({
     mutationFn: (conversationId: string) =>
       aiAssistantApi.deleteConversation(conversationId),
+
+    onMutate: async (conversationId) => {
+      await queryClient.cancelQueries({
+        queryKey: conversationKeys.all,
+      });
+
+      const previousConversations =
+        queryClient.getQueryData<ConversationSummary[]>(
+          conversationKeys.all,
+        );
+
+      queryClient.setQueryData<ConversationSummary[]>(
+        conversationKeys.all,
+        (current) =>
+          current?.filter(
+            (conversation) => conversation.id !== conversationId,
+          ),
+      );
+
+      return { previousConversations };
+    },
+
+    onError: (_error, _conversationId, context) => {
+      if (context?.previousConversations) {
+        queryClient.setQueryData(
+          conversationKeys.all,
+          context.previousConversations,
+        );
+      }
+    },
 
     onSuccess: (_, conversationId) => {
       queryClient.invalidateQueries({
