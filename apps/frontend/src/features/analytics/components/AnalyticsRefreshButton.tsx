@@ -33,7 +33,7 @@ export default function AnalyticsRefreshButton() {
       type="button"
       onClick={handleRefresh}
       disabled={isLoading}
-      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-[#0F9D91] hover:text-[#0F9D91] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-[var(--color-brand-500)] hover:text-[var(--color-brand-500)] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
     >
       <RefreshCw
         size={16}

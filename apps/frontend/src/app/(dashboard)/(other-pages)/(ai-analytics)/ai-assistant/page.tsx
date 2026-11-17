@@ -11,7 +11,7 @@ function AiAssistant() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#172B4D] dark:text-white">
+        <h1 className="text-2xl font-semibold text-[var(--color-gray-900)] dark:text-white">
           AI Assistant
         </h1>
 

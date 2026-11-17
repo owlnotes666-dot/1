@@ -116,7 +116,7 @@ export default function AppointmentsTable({
               >
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0F9D91]/10 text-[#0F9D91]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-brand-500)]/10 text-[var(--color-brand-500)]">
                       <UserRound className="h-4 w-4" />
                     </div>
 
@@ -184,7 +184,7 @@ export default function AppointmentsTable({
                       }
                       className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
                         isAdmin
-                          ? "text-[#0F9D91] hover:bg-[#0F9D91]/10"
+                          ? "text-[var(--color-brand-500)] hover:bg-[var(--color-brand-500)]/10"
                           : "cursor-not-allowed bg-gray-100 text-gray-400 opacity-70 dark:bg-gray-800 dark:text-gray-500"
                       }`}
                     >

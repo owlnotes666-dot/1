@@ -66,7 +66,7 @@ export default function AppointmentFilters({ filters, onChange }: Props) {
   );
 
   const inputClass =
-    "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[#0F9D91] focus:ring-2 focus:ring-[#0F9D91]/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200";
+    "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[var(--color-brand-500)] focus:ring-2 focus:ring-[var(--color-brand-500)]/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200";
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">

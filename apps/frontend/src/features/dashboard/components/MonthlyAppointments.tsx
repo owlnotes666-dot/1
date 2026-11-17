@@ -80,7 +80,7 @@ export default function MonthlyAppointments({ appointments }: Props) {
 
   
   const barColors = useMemo(
-    () => (isDark ? ["#465FFF", "#64748B"] : ["#1E3A8A", "#31409E"]),
+    () => (isDark ? ["#7D93B3", "#9AA8BD"] : ["#526A8E", "#69778B"]),
     [isDark],
   );
 
@@ -120,7 +120,7 @@ export default function MonthlyAppointments({ appointments }: Props) {
               family: "Outfit, sans-serif",
               size: 12,
             },
-            color: isDark ? "#ffffff" : "#374151",
+            color: isDark ? "#EEEAE1" : "#202735",
             boxWidth: 15,
             boxHeight: 15,
           },
@@ -137,7 +137,7 @@ export default function MonthlyAppointments({ appointments }: Props) {
           grid: { display: false },
           border: { display: false },
           ticks: {
-            color: isDark ? "#9ca3af" : "#6b7280",
+            color: isDark ? "#B6B0A5" : "#625B53",
             font: { family: "Outfit, sans-serif" },
           },
         },
@@ -145,14 +145,14 @@ export default function MonthlyAppointments({ appointments }: Props) {
           min: 0,
           max: Math.ceil((maxValue * 1.1) / 10) * 10 || 10,
           grid: {
-            color: isDark ? "#374151" : "#f3f4f6",
+            color: isDark ? "#39414D" : "#E4DFD4",
           },
           border: {
             display: false,
             dash: [5, 5],
           },
           ticks: {
-            color: isDark ? "#9ca3af" : "#6b7280",
+            color: isDark ? "#B6B0A5" : "#625B53",
             font: { family: "Outfit, sans-serif" },
           },
         },

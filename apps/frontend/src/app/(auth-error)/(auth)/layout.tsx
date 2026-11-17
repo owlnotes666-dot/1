@@ -47,7 +47,7 @@ export default function AuthLayout({
                   }}
                   whileHover={{
                     scale: 1.06,
-                    filter: "drop-shadow(0 0 12px rgba(54, 66, 201, 0.45))",
+                    filter: "drop-shadow(0 0 12px rgba(82, 106, 142, 0.3))",
                     transition: { type: "spring", stiffness: 300, damping: 15 },
                   }}
                   whileTap={{ scale: 0.96 }}

@@ -41,8 +41,8 @@ export default function AnalyticsDateFilter({
             onClick={() => onPeriodChange(item.value)}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               isActive
-                ? "bg-[#0F9D91] text-white shadow-sm"
-                : "border border-gray-200 bg-white text-gray-600 hover:border-[#0F9D91] hover:text-[#0F9D91] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                ? "bg-[var(--color-brand-500)] text-white shadow-sm"
+                : "border border-gray-200 bg-white text-gray-600 hover:border-[var(--color-brand-500)] hover:text-[var(--color-brand-500)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             }`}
           >
             {item.label}

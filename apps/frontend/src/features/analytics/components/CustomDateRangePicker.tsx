@@ -27,7 +27,7 @@ export default function CustomDateRangePicker({
           value={startDate}
           max={endDate}
           onChange={(e) => onStartDateChange(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#0F9D91] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[var(--color-brand-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>
 
@@ -42,7 +42,7 @@ export default function CustomDateRangePicker({
           min={startDate}
           max={new Date().toISOString().split("T")[0]}
           onChange={(e) => onEndDateChange(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#0F9D91] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-[var(--color-brand-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>
       {error && (

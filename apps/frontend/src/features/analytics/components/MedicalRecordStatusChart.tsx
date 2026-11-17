@@ -11,6 +11,7 @@ import {
 } from "chart.js";
 
 import { Doughnut } from "react-chartjs-2";
+import { useTheme } from "@/context/ThemeContext";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -18,17 +19,17 @@ interface MedicalRecordStatusChartProps {
   dateRange: AnalyticsDateRange;
 }
 
-const statusColors = {
-  Pending: "#E9A23B",
-  Reviewed: "#0F9D91",
-  Completed: "#16A36A",
-};
-
 export default function MedicalRecordStatusChart({
   dateRange,
 }: MedicalRecordStatusChartProps) {
+  const { theme } = useTheme();
   const { data, isLoading, isError } =
     useMedicalRecordStatusStats(dateRange);
+  const statusColors = {
+    Pending: theme === "dark" ? "#C6AD7C" : "#927448",
+    Reviewed: theme === "dark" ? "#7D93B3" : "#526A8E",
+    Completed: theme === "dark" ? "#8DB895" : "#4B8065",
+  };
 
   if (isLoading) {
     return (
@@ -77,12 +78,14 @@ export default function MedicalRecordStatusChart({
             responsive: true,
             maintainAspectRatio: false,
             cutout: "72%",
+            color: theme === "dark" ? "#B6B0A5" : "#625B53",
             plugins: {
               legend: {
                 position: "bottom",
                 labels: {
                   usePointStyle: true,
                   padding: 20,
+                  color: theme === "dark" ? "#B6B0A5" : "#625B53",
                 },
               },
             },

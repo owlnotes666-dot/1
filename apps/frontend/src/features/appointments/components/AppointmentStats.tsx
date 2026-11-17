@@ -16,8 +16,8 @@ const statConfig = [
     key: "total",
     label: "Total Appointments",
     icon: CalendarDays,
-    color: "text-[#0F9D91]",
-    bg: "bg-[#0F9D91]/10",
+    color: "text-[var(--color-brand-500)]",
+    bg: "bg-[var(--color-brand-500)]/10",
   },
   {
     key: "today",

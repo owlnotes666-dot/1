@@ -12,6 +12,7 @@ import {
   BarElement,
 } from "chart.js";
 import { Doughnut, Bar } from "react-chartjs-2";
+import { useTheme } from "@/context/ThemeContext";
 
 ChartJS.register(
   ArcElement,
@@ -23,6 +24,8 @@ ChartJS.register(
 );
 
 export default function AIInsights() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { data, isLoading, isError } = useOperationsInsights();
 
   const statusData = {
@@ -30,7 +33,9 @@ export default function AIInsights() {
     datasets: [
       {
         data: data?.appointmentDistribution.map((item) => item.count) ?? [],
-        backgroundColor: ["#0F9D91", "#E9A23B", "#E05252", "#64748B"],
+        backgroundColor: isDark
+          ? ["#7D93B3", "#C6AD7C", "#D28A91", "#9AA8BD"]
+          : ["#526A8E", "#927448", "#AD5B5C", "#69778B"],
         borderWidth: 0,
       },
     ],
@@ -42,7 +47,7 @@ export default function AIInsights() {
       {
         label: "Appointments",
         data: data?.departmentActivity.map((item) => item.appointments) ?? [],
-        backgroundColor: "#0F9D91",
+        backgroundColor: isDark ? "#7D93B3" : "#526A8E",
         borderRadius: 6,
         maxBarThickness: 38,
       },
@@ -52,12 +57,14 @@ export default function AIInsights() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    color: isDark ? "#B6B0A5" : "#625B53",
     plugins: {
       legend: {
         position: "bottom" as const,
         labels: {
           usePointStyle: true,
           padding: 18,
+          color: isDark ? "#B6B0A5" : "#625B53",
         },
       },
     },
@@ -66,6 +73,7 @@ export default function AIInsights() {
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    color: isDark ? "#B6B0A5" : "#625B53",
     plugins: {
       legend: {
         display: false,
@@ -76,6 +84,12 @@ export default function AIInsights() {
         beginAtZero: true,
         ticks: {
           precision: 0,
+          color: isDark ? "#B6B0A5" : "#625B53",
+        },
+        grid: {
+          color: isDark
+            ? "rgba(182, 176, 165, 0.18)"
+            : "rgba(98, 91, 83, 0.14)",
         },
       },
     },

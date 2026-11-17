@@ -11,6 +11,7 @@ import {
 } from "chart.js";
 
 import { Doughnut } from "react-chartjs-2";
+import { useTheme } from "@/context/ThemeContext";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -18,17 +19,17 @@ interface AppointmentStatusChartProps {
   dateRange: AnalyticsDateRange;
 }
 
-const statusColors = {
-  Scheduled: "#0F9D91",
-  Completed: "#16A36A",
-  Cancelled: "#E05252",
-};
-
 export default function AppointmentStatusChart({
   dateRange,
 }: AppointmentStatusChartProps) {
+  const { theme } = useTheme();
   const { data, isLoading, isError } =
     useAppointmentStatusStats(dateRange);
+  const statusColors = {
+    Scheduled: theme === "dark" ? "#7D93B3" : "#526A8E",
+    Completed: theme === "dark" ? "#8DB895" : "#4B8065",
+    Cancelled: theme === "dark" ? "#D28A91" : "#AD5B5C",
+  };
 
   if (isLoading) {
     return (
@@ -77,12 +78,14 @@ export default function AppointmentStatusChart({
             responsive: true,
             maintainAspectRatio: false,
             cutout: "72%",
+            color: theme === "dark" ? "#B6B0A5" : "#625B53",
             plugins: {
               legend: {
                 position: "bottom",
                 labels: {
                   usePointStyle: true,
                   padding: 20,
+                  color: theme === "dark" ? "#B6B0A5" : "#625B53",
                 },
               },
             },

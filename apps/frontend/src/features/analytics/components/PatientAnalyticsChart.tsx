@@ -14,6 +14,7 @@ import { Line } from "react-chartjs-2";
 
 import { usePatientMonthlyStats } from "../hooks";
 import type { AnalyticsDateRange } from "../types";
+import { useTheme } from "@/context/ThemeContext";
 
 interface PatientAnalyticsChartProps {
   dateRange: AnalyticsDateRange;
@@ -31,7 +32,9 @@ ChartJS.register(
 export default function PatientAnalyticsChart({
   dateRange,
 }: PatientAnalyticsChartProps) {
+  const { theme } = useTheme();
   const { data, isLoading, isError } = usePatientMonthlyStats(dateRange);
+  const isDark = theme === "dark";
 
   if (isLoading) {
     return (
@@ -54,14 +57,16 @@ export default function PatientAnalyticsChart({
         label: "New Patients",
         data: data.map((item) => item.total),
         fill: true,
-        backgroundColor: "rgba(15, 157, 145, 0.10)",
-        borderColor: "#0F9D91",
+        backgroundColor: isDark
+          ? "rgba(125, 147, 179, 0.2)"
+          : "rgba(82, 106, 142, 0.12)",
+        borderColor: isDark ? "#7D93B3" : "#526A8E",
         borderWidth: 3,
         tension: 0.4,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: "#0F9D91",
-        pointBorderColor: "#FFFFFF",
+        pointBackgroundColor: isDark ? "#7D93B3" : "#526A8E",
+        pointBorderColor: isDark ? "#202735" : "#fffdf8",
         pointBorderWidth: 2,
       },
     ],
@@ -73,15 +78,21 @@ export default function PatientAnalyticsChart({
     plugins: {
       legend: {
         display: false,
+        labels: {
+          color: isDark ? "#B6B0A5" : "#625B53",
+        },
       },
       tooltip: {
-        backgroundColor: "#172B4D",
+        backgroundColor: isDark ? "#30313A" : "#202735",
+        titleColor: isDark ? "#EEEAE1" : "#FFFD F8",
+        bodyColor: isDark ? "#EEEAE1" : "#FFFD F8",
         padding: 12,
         displayColors: false,
       },
     },
     scales: {
       x: {
+        ticks: { color: isDark ? "#B6B0A5" : "#625B53" },
         grid: {
           display: false,
         },
@@ -93,9 +104,12 @@ export default function PatientAnalyticsChart({
         beginAtZero: true,
         ticks: {
           precision: 0,
+          color: isDark ? "#B6B0A5" : "#625B53",
         },
         grid: {
-          color: "rgba(148, 163, 184, 0.15)",
+          color: isDark
+            ? "rgba(182, 176, 165, 0.18)"
+            : "rgba(98, 91, 83, 0.14)",
         },
         border: {
           display: false,

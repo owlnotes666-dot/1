@@ -44,7 +44,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="77.5957"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="0.0405273"
@@ -52,7 +52,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="77.5957"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="75.8726"
@@ -60,7 +60,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="154.31"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="75.8726"
@@ -68,7 +68,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="154.31"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="16.7939"
@@ -77,7 +77,7 @@ export default function AnimatedLogo404() {
           height="77.5957"
           rx="6.26271"
           transform="rotate(-90 16.7939 91.3442)"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="16.7939"
@@ -86,7 +86,7 @@ export default function AnimatedLogo404() {
           height="77.5957"
           rx="6.26271"
           transform="rotate(-90 16.7939 91.3442)"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
       </motion.g>
 
@@ -101,7 +101,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="77.5957"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="363.502"
@@ -109,7 +109,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="77.5957"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="439.334"
@@ -117,7 +117,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="154.31"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="439.334"
@@ -125,7 +125,7 @@ export default function AnimatedLogo404() {
           width="32.6255"
           height="154.31"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="380.255"
@@ -134,7 +134,7 @@ export default function AnimatedLogo404() {
           height="77.5957"
           rx="6.26271"
           transform="rotate(-90 380.255 91.3442)"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="380.255"
@@ -143,7 +143,7 @@ export default function AnimatedLogo404() {
           height="77.5957"
           rx="6.26271"
           transform="rotate(-90 380.255 91.3442)"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
       </motion.g>
 
@@ -153,7 +153,7 @@ export default function AnimatedLogo404() {
         width="166.462"
         height="130.311"
         rx="28"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
         strokeWidth="24"
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{
@@ -184,9 +184,9 @@ export default function AnimatedLogo404() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
+        fill="var(--color-brand-500)"
         strokeWidth="0.752667"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
       />
       <motion.rect
         custom={1}
@@ -198,9 +198,9 @@ export default function AnimatedLogo404() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
+        fill="var(--color-brand-500)"
         strokeWidth="0.752667"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
       />
       <motion.rect
         custom={2}
@@ -212,9 +212,9 @@ export default function AnimatedLogo404() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
+        fill="var(--color-brand-500)"
         strokeWidth="0.752667"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
       />
       <motion.rect
         custom={3}
@@ -226,9 +226,9 @@ export default function AnimatedLogo404() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
+        fill="var(--color-brand-500)"
         strokeWidth="0.752667"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
       />
       <motion.rect
         custom={4}
@@ -240,9 +240,9 @@ export default function AnimatedLogo404() {
         width="57.5655"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
+        fill="var(--color-brand-500)"
         strokeWidth="0.752667"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
       />
     </motion.svg>
   );

@@ -23,7 +23,7 @@ export function DataTablePagination({
   const activePageClass =
     variant === "teal"
       ? "bg-teal-600 text-white shadow-theme-xs dark:bg-teal-600 dark:text-white"
-      : "bg-[#465FFF] text-white shadow-theme-xs dark:bg-[#465FFF] dark:text-white";
+      : "bg-brand-500 text-white shadow-theme-xs dark:bg-brand-500 dark:text-white";
 
   const getPages = (): (number | "...")[] => {
     if (pageCount <= 7) {

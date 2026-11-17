@@ -44,7 +44,7 @@ export default function AnimatedLogo500() {
           width="32.6255"
           height="71"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="0.161133"
@@ -52,7 +52,7 @@ export default function AnimatedLogo500() {
           width="32.6255"
           height="71"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="88.2891"
@@ -60,7 +60,7 @@ export default function AnimatedLogo500() {
           width="32.6255"
           height="63.5801"
           rx="6.26271"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="88.2891"
@@ -68,7 +68,7 @@ export default function AnimatedLogo500() {
           width="32.6255"
           height="63.5801"
           rx="6.26271"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="15.5254"
@@ -77,7 +77,7 @@ export default function AnimatedLogo500() {
           height="105.389"
           rx="6.26271"
           transform="rotate(-90 15.5254 33.4673)"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="15.5254"
@@ -86,7 +86,7 @@ export default function AnimatedLogo500() {
           height="105.389"
           rx="6.26271"
           transform="rotate(-90 15.5254 33.4673)"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="0.161133"
@@ -95,7 +95,7 @@ export default function AnimatedLogo500() {
           height="107.028"
           rx="6.26271"
           transform="rotate(-90 0.161133 155.16)"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="0.161133"
@@ -104,7 +104,7 @@ export default function AnimatedLogo500() {
           height="107.028"
           rx="6.26271"
           transform="rotate(-90 0.161133 155.16)"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
         <rect
           x="15.5254"
@@ -113,7 +113,7 @@ export default function AnimatedLogo500() {
           height="91.6638"
           rx="6.26271"
           transform="rotate(-90 15.5254 96.3398)"
-          fill="#465FFF"
+          fill="var(--color-brand-500)"
         />
         <rect
           x="15.5254"
@@ -122,7 +122,7 @@ export default function AnimatedLogo500() {
           height="91.6638"
           rx="6.26271"
           transform="rotate(-90 15.5254 96.3398)"
-          stroke="#465FFF"
+          stroke="var(--color-brand-500)"
         />
       </motion.g>
 
@@ -132,7 +132,7 @@ export default function AnimatedLogo500() {
         width="166.462"
         height="130.311"
         rx="28"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
         strokeWidth="24"
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: 1 }}
@@ -152,8 +152,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -166,8 +166,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -180,8 +180,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -194,8 +194,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -208,8 +208,8 @@ export default function AnimatedLogo500() {
         width="57.5655"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
 
@@ -219,7 +219,7 @@ export default function AnimatedLogo500() {
         width="166.462"
         height="130.311"
         rx="28"
-        stroke="#465FFF"
+        stroke="var(--color-brand-500)"
         strokeWidth="24"
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: 1 }}
@@ -239,8 +239,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -253,8 +253,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -267,8 +267,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -281,8 +281,8 @@ export default function AnimatedLogo500() {
         width="22.1453"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
       <motion.rect
@@ -295,8 +295,8 @@ export default function AnimatedLogo500() {
         width="57.5655"
         height="20.7141"
         rx="2.63433"
-        fill="#465FFF"
-        stroke="#465FFF"
+        fill="var(--color-brand-500)"
+        stroke="var(--color-brand-500)"
         strokeWidth="0.752667"
       />
     </motion.svg>

@@ -20,7 +20,7 @@ interface Props {
 }
 
 const inputClass =
-  "mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[#0F9D91] focus:ring-2 focus:ring-[#0F9D91]/15 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100";
+  "mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-brand-500)] focus:ring-2 focus:ring-[var(--color-brand-500)]/15 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100";
 
 const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300";
 
@@ -77,7 +77,7 @@ export default function AppointmentForm({
     >
       {isLoading ? (
         <div className="flex min-h-[220px] items-center justify-center gap-2 py-10 text-sm text-gray-500 dark:text-gray-400">
-          <Loader2 className="h-5 w-5 animate-spin text-[#0F9D91]" />
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--color-brand-500)]" />
           Loading patients and doctors...
         </div>
       ) : isError || !options ? (
@@ -200,7 +200,7 @@ export default function AppointmentForm({
         <button
           type="submit"
           disabled={isSubmitting || isLoading || isError || !options}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0F9D91] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0c897f] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-500)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--color-brand-600)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {appointment ? "Save Changes" : "Schedule Appointment"}
