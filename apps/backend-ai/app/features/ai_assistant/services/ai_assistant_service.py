@@ -4,6 +4,10 @@ import logging
 import json
 from datetime import datetime, timezone
 
+from app.features.ai_assistant.services.conversation_title import (
+    generate_conversation_title,
+)
+
 from app.features.ai_assistant.services.database_agent.tool_registry import (
     get_admin_tools,
     get_database_tools_for_question,
@@ -422,7 +426,8 @@ class AIAssistantService:
                     if conversation is None:
                         self.conversation_repository.create_conversation(
                             owner_id=user_id,
-                            title=safe_user_message[:100],
+                            title=generate_conversation_title(
+                                safe_user_message),
                             conversation_id=conversation_id,
                         )
                     elif str(conversation.get("owner_id")) != str(user_id):
@@ -432,7 +437,8 @@ class AIAssistantService:
                     conversation = (
                         self.conversation_repository.create_conversation(
                             owner_id=user_id,
-                            title=safe_user_message[:100],
+                            title=generate_conversation_title(
+                                safe_user_message),
                         )
                     )
                     conversation_id = UUID(str(conversation["id"]))

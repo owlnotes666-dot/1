@@ -125,7 +125,7 @@ async def test_admin_new_conversation_is_created_and_saved(
 
     repository.create_conversation.assert_called_once_with(
         owner_id=admin_id,
-        title="Patient information was redacted.",
+        title="Patient information was redacted",
     )
 
     assert repository.save_message.call_count == 2
@@ -235,7 +235,7 @@ async def test_admin_creates_conversation_with_client_generated_id(
     assert response.conversation_id == conversation_id
     repository.create_conversation.assert_called_once_with(
         owner_id=admin_id,
-        title="Patient information was redacted.",
+        title="Patient information was redacted",
         conversation_id=conversation_id,
     )
     assert repository.save_message.call_count == 2
