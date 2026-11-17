@@ -1,3 +1,5 @@
+export type PatientStatus = "Active" | "Inactive";
+
 export interface Patient {
   id: string;
   full_name: string;
@@ -10,12 +12,23 @@ export interface Patient {
   created_at: string;
 }
 
-export interface CreatePatientPayload {
+export interface PatientPayload {
   full_name: string;
   age: number | null;
   gender: string | null;
   phone: string | null;
   email: string | null;
   condition: string | null;
-  status: string;
+  status: PatientStatus;
+}
+
+export type CreatePatientPayload = PatientPayload;
+
+export interface UpdatePatientPayload extends PatientPayload {
+  id: string;
+}
+
+export interface UpdatePatientStatusPayload {
+  id: string;
+  status: PatientStatus;
 }

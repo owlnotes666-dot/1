@@ -16,6 +16,8 @@ import { useIsAdmin } from "@/features/auth/hooks/useIsAdmin";
 
 import { usePatients } from "../hooks/usePatients";
 import { useCreatePatient } from "../hooks/useCreatePatient";
+import { useUpdatePatientStatus } from "../hooks/useUpdatePatientStatus";
+import EditPatientModal from "./EditPatientModal";
 import {
   patientFormSchema,
   type PatientFormValues,
@@ -29,6 +31,7 @@ export default function PatientsClient() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [pageIndex, setPageIndex] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [formError, setFormError] = useState("");
 
   const { data: isAdmin = false, isLoading: isAdminLoading } = useIsAdmin();
@@ -41,6 +44,7 @@ export default function PatientsClient() {
   } = usePatients();
 
   const createPatientMutation = useCreatePatient();
+  const updateStatusMutation = useUpdatePatientStatus();
 
   const {
     register,
@@ -102,6 +106,15 @@ export default function PatientsClient() {
 
     setFormError("");
     setIsAddModalOpen(true);
+  };
+
+  const handleStatusChange = (patient: Patient) => {
+    if (!isAdmin || isAdminLoading || updateStatusMutation.isPending) return;
+
+    updateStatusMutation.mutate({
+      id: patient.id,
+      status: patient.status === "Active" ? "Inactive" : "Active",
+    });
   };
 
   const handleAddPatient = async (formData: PatientFormValues) => {
@@ -362,8 +375,18 @@ export default function PatientsClient() {
           </div>
         </div>
 
+        {updateStatusMutation.isError && (
+          <div
+            role="alert"
+            className="mx-5 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+          >
+            Failed to update patient status:{" "}
+            {updateStatusMutation.error.message}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left">
+          <table className="w-full min-w-[980px] text-left">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>
                 {[
@@ -373,10 +396,13 @@ export default function PatientsClient() {
                   "Condition",
                   "Status",
                   "Registration Date",
+                  "Actions",
                 ].map((heading) => (
                   <th
                     key={heading}
-                    className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                    className={`px-5 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 ${
+                      heading === "Actions" ? "text-right" : ""
+                    }`}
                   >
                     {heading}
                   </th>
@@ -388,7 +414,7 @@ export default function PatientsClient() {
               {loading || isError ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     <Loading />
@@ -397,7 +423,7 @@ export default function PatientsClient() {
               ) : filteredPatients.length === 0 ? (
                 <tr data-animate="row">
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
                     No patients found.
@@ -482,6 +508,49 @@ export default function PatientsClient() {
                           year: "numeric",
                         },
                       )}
+                    </td>
+
+                    <td className="whitespace-nowrap px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPatient(patient)}
+                          disabled={!isAdmin || isAdminLoading}
+                          title={
+                            isAdmin
+                              ? "Edit patient"
+                              : "Only administrators can edit patients."
+                          }
+                          className="rounded-lg px-3 py-1.5 text-sm font-medium text-teal-700 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-teal-400 dark:hover:bg-teal-950/40"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(patient)}
+                          disabled={
+                            !isAdmin ||
+                            isAdminLoading ||
+                            updateStatusMutation.isPending
+                          }
+                          title={
+                            isAdmin
+                              ? `${patient.status === "Active" ? "Deactivate" : "Activate"} patient`
+                              : "Only administrators can change patient status."
+                          }
+                          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                            patient.status === "Active"
+                              ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                              : "text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
+                          }`}
+                        >
+                          {updateStatusMutation.isPending
+                            ? "Updating..."
+                            : patient.status === "Active"
+                              ? "Deactivate"
+                              : "Activate"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -723,6 +792,13 @@ export default function PatientsClient() {
             </div>
           </form>
         </Modal>
+      )}
+      {isAdmin && selectedPatient && (
+        <EditPatientModal
+          isOpen={!!selectedPatient}
+          patient={selectedPatient}
+          onClose={() => setSelectedPatient(null)}
+        />
       )}
     </div>
   );
