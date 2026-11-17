@@ -17,27 +17,34 @@ afterEach(() => {
 });
 
 describe("ChatMessage", () => {
-  it("renders Markdown bold markers as bold text in assistant messages", () => {
-    render(
-      <ChatMessage
-        role="assistant"
-        content="This is **important**."
-        timestamp="2026-11-17T05:00:00.000Z"
-      />,
-    );
+  it("renders Markdown bold markers as bold text in assistant messages", async () => {
+    await act(async () => {
+      render(
+        <ChatMessage
+          role="assistant"
+          content="This is **important**."
+          timestamp="2026-11-17T05:00:00.000Z"
+        />,
+      );
+    });
 
     expect(screen.getByText("important").tagName).toBe("STRONG");
-    expect(screen.getByText("This is important.")).toBeInTheDocument();
+
+    expect(screen.getByText("important").closest("p")).toHaveTextContent(
+      "This is important.",
+    );
   });
 
-  it("keeps Markdown markers literal in user messages", () => {
-    render(
-      <ChatMessage
-        role="user"
-        content="This is **literal**."
-        timestamp="2026-11-17T05:00:00.000Z"
-      />,
-    );
+  it("keeps Markdown markers literal in user messages", async () => {
+    await act(async () => {
+      render(
+        <ChatMessage
+          role="user"
+          content="This is **literal**."
+          timestamp="2026-11-17T05:00:00.000Z"
+        />,
+      );
+    });
 
     expect(screen.getByText("This is **literal**.")).toBeInTheDocument();
   });
@@ -62,11 +69,13 @@ describe("ChatMessage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Copy message" }));
       await Promise.resolve();
     });
+
     expect(screen.getByRole("status")).toHaveTextContent("Copied");
 
     act(() => {
       vi.advanceTimersByTime(2000);
     });
+
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });
