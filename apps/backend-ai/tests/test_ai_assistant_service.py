@@ -514,3 +514,44 @@ async def test_safe_output_passes_llm_safety_check(
     )
 
     mock_detector.assert_awaited_once()
+    
+    
+@pytest.mark.anyio
+async def test_demo_uses_request_history_without_repository(
+    service,
+    mock_provider,
+):
+    request = ChatRequest(
+        message="What was my previous question?",
+        history=[
+            {
+                "role": "user",
+                "content": "Explain hypertension.",
+            },
+            {
+                "role": "assistant",
+                "content": "Hypertension means high blood pressure.",
+            },
+        ],
+    )
+
+    await service.generate_response(request)
+
+    mock_provider.generate.assert_awaited_once()
+
+    messages = mock_provider.generate.await_args.kwargs["messages"]
+
+    assert messages[0].role == "system"
+
+    assert messages[1].role == "user"
+    assert messages[1].content == "Explain hypertension."
+
+    assert messages[2].role == "assistant"
+    assert messages[2].content == (
+        "Hypertension means high blood pressure."
+    )
+
+    assert messages[3].role == "user"
+    assert "What was my previous question?" in messages[3].content
+
+    assert service.conversation_repository is None

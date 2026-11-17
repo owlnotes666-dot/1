@@ -240,3 +240,113 @@ async def test_admin_creates_conversation_with_client_generated_id(
     )
     assert repository.save_message.call_count == 2
     provider.generate.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_admin_uses_database_history_and_ignores_client_history(
+    admin_id,
+    conversation_id,
+    repository,
+    provider,
+    safe_guardrails,
+    monkeypatch,
+):
+    database_history = [
+        {
+            "role": "user",
+            "content": "Explain hypertension.",
+        },
+        {
+            "role": "assistant",
+            "content": "Hypertension means high blood pressure.",
+        },
+    ]
+
+    repository.get_messages.return_value = database_history
+
+    monkeypatch.setattr(
+        "app.features.ai_assistant.services.ai_assistant_service.inspect_pii",
+        lambda message: SimpleNamespace(
+            contains_pii=False,
+            redacted_content=message,
+        ),
+    )
+
+    service = AIAssistantService(
+        conversation_repository=repository,
+    )
+
+    await service.generate_response(
+        request=ChatRequest(
+            message="What did we discuss?",
+            conversation_id=conversation_id,
+            history=[
+                {
+                    "role": "user",
+                    "content": "FAKE CLIENT HISTORY",
+                },
+            ],
+        ),
+        user_id=admin_id,
+    )
+
+    repository.get_messages.assert_called_once_with(
+        conversation_id
+    )
+
+    messages = provider.generate.await_args.kwargs["messages"]
+
+    assert messages[0].role == "system"
+
+    assert messages[1].role == "user"
+    assert messages[1].content == "Explain hypertension."
+
+    assert messages[2].role == "assistant"
+    assert messages[2].content == (
+        "Hypertension means high blood pressure."
+    )
+
+    assert messages[3].role == "user"
+    assert "What did we discuss?" in messages[3].content
+
+    assert all(
+        "FAKE CLIENT HISTORY" not in message.content
+        for message in messages
+    )
+
+
+@pytest.mark.asyncio
+async def test_admin_history_is_limited_to_last_20_messages(
+    admin_id,
+    conversation_id,
+    repository,
+    provider,
+    safe_guardrails,
+):
+    repository.get_messages.return_value = [
+        {
+            "role": "user" if index % 2 == 0 else "assistant",
+            "content": f"History message {index}",
+        }
+        for index in range(25)
+    ]
+
+    service = AIAssistantService(
+        conversation_repository=repository,
+    )
+
+    await service.generate_response(
+        request=ChatRequest(
+            message="Continue our conversation.",
+            conversation_id=conversation_id,
+        ),
+        user_id=admin_id,
+    )
+
+    messages = provider.generate.await_args.kwargs["messages"]
+
+    history_messages = messages[1:-1]
+
+    assert len(history_messages) == 20
+    assert history_messages[0].content == "History message 5"
+    assert history_messages[-1].content == "History message 24"
