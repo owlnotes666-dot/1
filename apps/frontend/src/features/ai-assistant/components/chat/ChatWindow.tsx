@@ -7,6 +7,8 @@ import {
   Loader2,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 import { useChat } from "../../hooks/useChat";
@@ -28,6 +30,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  timestamp: string;
   sources?: ChatSource[];
   webSources?: WebSource[];
 }
@@ -39,6 +42,7 @@ function ChatWindow() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isHistoryMenuOpen, setIsHistoryMenuOpen] = useState(false);
+  const [isHistorySidebarOpen, setIsHistorySidebarOpen] = useState(true);
 
   const { data: isAdminResult, isLoading: isAdminLoading } = useIsAdmin();
   const isAdmin = isAdminResult ?? false;
@@ -95,6 +99,7 @@ function ChatWindow() {
           id: message.id,
           role: message.role,
           content: message.content,
+          timestamp: message.created_at,
           sources: message.sources ?? [],
           webSources: message.web_sources ?? [],
         })),
@@ -169,6 +174,7 @@ function ChatWindow() {
       id: crypto.randomUUID(),
       role: "user",
       content: message,
+      timestamp: new Date().toISOString(),
     };
 
     const history = messages.slice(-20).map(({ role, content }) => ({
@@ -193,6 +199,7 @@ function ChatWindow() {
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
+        timestamp: new Date().toISOString(),
         sources: response.sources,
         webSources: response.web_sources,
       };
@@ -219,10 +226,39 @@ function ChatWindow() {
         </p>
       )}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row">
+      {isAdmin && (
+        <div className="hidden lg:flex">
+          <button
+            type="button"
+            onClick={() => setIsHistorySidebarOpen((isOpen) => !isOpen)}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+
+            aria-expanded={isHistorySidebarOpen}
+            aria-controls="desktop-chat-history"
+          >
+            {isHistorySidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+
+          </button>
+        </div>
+      )}
+
+      <div
+        className={`flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row ${
+          isAdmin && !isHistorySidebarOpen ? "lg:gap-0" : "lg:gap-4"
+        }`}
+      >
         {/* Admin conversation history */}
         {isAdmin && (
-          <div className="hidden h-full shrink-0 lg:block lg:w-72">
+          <div
+            id="desktop-chat-history"
+            className={`hidden h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out lg:block ${
+              isHistorySidebarOpen ? "lg:w-72" : "lg:w-0"
+            }`}
+          >
             <ConversationHistory
               conversations={conversations}
               activeConversationId={conversationId}
@@ -279,6 +315,7 @@ function ChatWindow() {
                   key={message.id}
                   role={message.role}
                   content={message.content}
+                  timestamp={message.timestamp}
                   sources={message.sources}
                   webSources={message.webSources}
                   animate={message.role === "assistant"}
