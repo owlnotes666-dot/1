@@ -1,6 +1,10 @@
 export interface ChatRequest {
   message: string;
   conversation_id?: string | null;
+  history?: {
+    role: "user" | "assistant";
+    content: string;
+  }[];
 }
 
 export interface ChatUsage {
