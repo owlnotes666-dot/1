@@ -1,8 +1,6 @@
 import { Metadata } from "next";
 
-import AccessTokenCard from "@/features/ai-assistant/components/developer-tools/access-token-card";
 import ChatWindow from "@/features/ai-assistant/components/chat/ChatWindow";
-
 
 export const metadata: Metadata = {
   title: "AI Assistant | Medical Dashboard",
@@ -23,9 +21,6 @@ function AiAssistant() {
       </div>
 
       <ChatWindow />
-
-      {/* Temporary developer tool - remove before production */}
-      <AccessTokenCard />
     </div>
   );
 }
