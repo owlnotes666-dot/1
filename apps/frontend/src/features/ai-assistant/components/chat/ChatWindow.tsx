@@ -219,7 +219,7 @@ function ChatWindow() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[520px] flex-col gap-3">
+    <div className="ai-assistant-font flex h-[calc(100vh-220px)] min-h-[520px] flex-col gap-3">
       {!isAdminLoading && isAdminResult === false && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
           Chat history is not available for demo accounts. :)
@@ -232,7 +232,6 @@ function ChatWindow() {
             type="button"
             onClick={() => setIsHistorySidebarOpen((isOpen) => !isOpen)}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-
             aria-expanded={isHistorySidebarOpen}
             aria-controls="desktop-chat-history"
           >
@@ -241,7 +240,6 @@ function ChatWindow() {
             ) : (
               <PanelLeftOpen className="h-4 w-4" />
             )}
-
           </button>
         </div>
       )}
@@ -360,8 +358,8 @@ function ChatWindow() {
             />
 
             <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500 sm:text-xs">
-              AI-generated information may not always be accurate. Always
-              verify important medical decisions.
+              AI-generated information may not always be accurate. Always verify
+              important medical decisions.
             </p>
           </div>
         </div>

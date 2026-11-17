@@ -2,14 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  User,
-  Bot,
-  BookOpen,
-  ExternalLink,
-  Copy,
-  Check,
-} from "lucide-react";
+import { User, Bot, BookOpen, ExternalLink, Copy, Check } from "lucide-react";
 import type { ChatSource, WebSource } from "../../types";
 
 interface ChatMessageProps {
@@ -44,9 +37,7 @@ function ChatMessage({
   animate = false,
 }: ChatMessageProps) {
   const isUser = role === "user";
-  const [copyStatus, setCopyStatus] = useState<"copied" | "error" | null>(
-    null,
-  );
+  const [copyStatus, setCopyStatus] = useState<"copied" | "error" | null>(null);
 
   useEffect(() => {
     if (!copyStatus) return;
@@ -168,7 +159,7 @@ function ChatMessage({
               : "rounded-bl-md border border-slate-200/90 bg-white text-slate-800 dark:border-slate-700/90 dark:bg-slate-800 dark:text-slate-100"
           }`}
         >
-          <p className="whitespace-pre-wrap [font-family:Inter,Segoe_UI,Roboto,Arial,sans-serif] text-[13.5px] leading-7 sm:text-sm">
+          <p className="whitespace-pre-wrap text-[13.5px] leading-7 sm:text-sm">
             {isUser ? displayedContent : renderBoldText(displayedContent)}
           </p>
 
@@ -231,7 +222,9 @@ function ChatMessage({
           <button
             type="button"
             onClick={handleCopy}
-            aria-label={copyStatus === "copied" ? "Message copied" : "Copy message"}
+            aria-label={
+              copyStatus === "copied" ? "Message copied" : "Copy message"
+            }
             title={copyStatus === "copied" ? "Copied" : "Copy message"}
             className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
