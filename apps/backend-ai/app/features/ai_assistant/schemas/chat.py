@@ -1,6 +1,15 @@
 from uuid import UUID
-
+from typing import Literal
 from pydantic import BaseModel, Field, field_validator, AnyHttpUrl
+
+
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(
+        ...,
+        min_length=1,
+        max_length=8000,
+    )
 
 
 class ChatRequest(BaseModel):
@@ -12,6 +21,10 @@ class ChatRequest(BaseModel):
     )
 
     conversation_id: UUID | None = None
+    history: list[ChatHistoryMessage] = Field(
+        default_factory=list,
+        max_length=20,
+    )
 
     @field_validator("message")
     @classmethod
