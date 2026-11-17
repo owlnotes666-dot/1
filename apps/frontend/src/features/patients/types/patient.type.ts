@@ -1,21 +1,22 @@
 export type PatientStatus = "Active" | "Inactive";
+export type PatientGender = "Male" | "Female" | "Other";
 
 export interface Patient {
   id: string;
   full_name: string;
   age: number | null;
-  gender: string | null;
+  gender: PatientGender | null;
   phone: string | null;
   email: string | null;
   condition: string | null;
-  status: string;
+  status: PatientStatus;
   created_at: string;
 }
 
 export interface PatientPayload {
   full_name: string;
   age: number | null;
-  gender: string | null;
+  gender: PatientGender | null;
   phone: string | null;
   email: string | null;
   condition: string | null;
