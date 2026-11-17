@@ -1,232 +1,276 @@
 import { dashboardService } from "@/features/dashboard";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockSingle = vi.fn();
-const mockSelect = vi.fn();
-const mockFrom = vi.fn();
+const mockFrom = vi.hoisted(() => vi.fn());
+const mockSchema = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
-    from: mockFrom,
+    schema: mockSchema,
   }),
 }));
 
+let queryResults: Array<{
+  data?: unknown;
+  error: Error | null;
+  count?: number | null;
+}> = [];
+
 beforeEach(() => {
   vi.clearAllMocks();
+  queryResults = [];
 
-  mockFrom.mockImplementation(() => ({
-    select: mockSelect,
-  }));
+  mockSchema.mockReturnValue({
+    from: mockFrom,
+  });
+
+  mockFrom.mockImplementation(() => {
+    const result = queryResults.shift() ?? {
+      data: [],
+      error: null,
+      count: 0,
+    };
+
+    const query: unknown = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      gte: vi.fn(() => query),
+      lt: vi.fn(() => query),
+      order: vi.fn(() => query),
+      maybeSingle: vi.fn(async () => result),
+      single: vi.fn(async () => result),
+      then: (resolve: (value: typeof result) => unknown) =>
+        Promise.resolve(result).then(resolve),
+    };
+
+    return query;
+  });
 });
 
-it("should get dashboard stats", async () => {
-  const stats = {
-    revenue: 12000,
-    sales: 400,
-  };
+describe("dashboardService", () => {
+  it("should get dashboard stats", async () => {
+    queryResults = [
+      { count: 120, error: null },
+      { count: 20, error: null },
+      { count: 10, error: null },
+      { count: 8, error: null },
+      { count: 4, error: null },
+      { count: 5, error: null },
+      { count: 3, error: null },
+      {
+        data: { active_doctors: 5, pending_reports: 3 },
+        error: null,
+      },
+      {
+        data: { active_doctors: 4, pending_reports: 6 },
+        error: null,
+      },
+    ];
 
-  mockSelect.mockReturnValue({
-    single: mockSingle,
+    const result = await dashboardService.getStats();
+
+    expect(mockSchema).toHaveBeenCalledWith("medical");
+    expect(mockFrom).toHaveBeenCalledTimes(9);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        totalPatients: 120,
+        patientsGrowth: 100,
+        appointmentsToday: 8,
+        appointmentsGrowth: 100,
+        activeDoctors: 5,
+        doctorsGrowth: 25,
+        pendingReports: 3,
+        reportsGrowth: -50,
+      }),
+    );
   });
 
-  mockSingle.mockResolvedValue({
-    data: stats,
-    error: null,
+  it("should throw when dashboard stats query fails", async () => {
+    const error = new Error("Database error");
+
+    queryResults = [
+      { count: null, error },
+      ...Array.from({ length: 8 }, () => ({
+        count: 0,
+        data: null,
+        error: null,
+      })),
+    ];
+
+    await expect(dashboardService.getStats()).rejects.toThrow("Database error");
   });
 
-  const result = await dashboardService.getStats();
+  it("should return monthly appointment counts", async () => {
+    queryResults = [
+      {
+        data: [
+          { appointment_date: `${new Date().getFullYear()}-01-10` },
+          { appointment_date: `${new Date().getFullYear()}-01-15` },
+          { appointment_date: `${new Date().getFullYear()}-02-12` },
+        ],
+        error: null,
+      },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboardstats");
-  expect(mockSelect).toHaveBeenCalledWith("*");
+    const result = await dashboardService.appointments();
 
-  expect(result).toEqual(stats);
-});
-
-it("should get sales", async () => {
-  const sales = [
-    {
-      month: "Jan",
-      value: 200,
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: sales,
-    error: null,
+    expect(mockSchema).toHaveBeenCalledWith("medical");
+    expect(mockFrom).toHaveBeenCalledWith("appointments");
+    expect(result).toHaveLength(12);
+    expect(result[0].appointments).toBe(2);
+    expect(result[1].appointments).toBe(1);
   });
 
-  const result = await dashboardService.getSales();
+  it("should throw when fetching appointments fails", async () => {
+    queryResults = [
+      {
+        data: null,
+        error: new Error("Appointments error"),
+      },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboardsales");
-
-  expect(result).toEqual(sales);
-});
-
-it("should get revenue", async () => {
-  const revenue = [
-    {
-      month: "Jan",
-      revenue: 500,
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: revenue,
-    error: null,
+    await expect(dashboardService.appointments()).rejects.toThrow(
+      "Appointments error",
+    );
   });
 
-  const result = await dashboardService.getRevenue();
+  it("should get today's appointments", async () => {
+    const appointments = [
+      {
+        id: "appointment-1",
+        status: "Scheduled",
+        appointment_time: "09:00",
+      },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboardrevenue");
+    queryResults = [
+      {
+        data: appointments,
+        error: null,
+      },
+    ];
 
-  expect(result).toEqual(revenue);
-});
+    const result = await dashboardService.getTodayAppointments();
 
-it("should get target", async () => {
-  const target = {
-    target: 90,
-  };
-
-  mockSelect.mockReturnValue({
-    single: mockSingle,
+    expect(mockFrom).toHaveBeenCalledWith("appointments");
+    expect(result).toEqual(appointments);
   });
 
-  mockSingle.mockResolvedValue({
-    data: target,
-    error: null,
+  it("should throw when today's appointments query fails", async () => {
+    queryResults = [
+      {
+        data: null,
+        error: new Error("Today's appointments error"),
+      },
+    ];
+
+    await expect(dashboardService.getTodayAppointments()).rejects.toThrow(
+      "Today's appointments error",
+    );
   });
 
-  const result = await dashboardService.getTarget();
+  it("should calculate operations insights", async () => {
+    queryResults = [
+      {
+        data: [
+          { status: "Completed" },
+          { status: "Completed" },
+          { status: "Pending" },
+        ],
+        error: null,
+      },
+      {
+        data: [
+          {
+            specialty: "Cardiology",
+            appointments: [{ id: "1" }, { id: "2" }],
+          },
+          {
+            specialty: "Cardiology",
+            appointments: [{ id: "3" }],
+          },
+          {
+            specialty: "Neurology",
+            appointments: [{ id: "4" }],
+          },
+        ],
+        error: null,
+      },
+      {
+        data: [
+          {
+            id: "record-1",
+            title: "Blood Test",
+            created_at: "2026-11-17T10:00:00.000Z",
+            patients: { full_name: "Demo Patient" },
+          },
+        ],
+        error: null,
+      },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboardtarget");
+    const result = await dashboardService.getOperationsInsights();
 
-  expect(result).toEqual(target);
-});
+    expect(result.appointmentDistribution).toEqual(
+      expect.arrayContaining([
+        { status: "Completed", count: 2 },
+        { status: "Pending", count: 1 },
+      ]),
+    );
 
-it("should get visitors", async () => {
-  const visitors = [
-    {
-      day: "Mon",
-      value: 150,
-    },
-  ];
+    expect(result.departmentActivity).toEqual(
+      expect.arrayContaining([
+        { specialty: "Cardiology", appointments: 3 },
+        { specialty: "Neurology", appointments: 1 },
+      ]),
+    );
 
-  mockSelect.mockResolvedValue({
-    data: visitors,
-    error: null,
+    expect(result.operationalAlerts).toEqual([
+      {
+        id: "record-1",
+        title: "Blood Test",
+        patientName: "Demo Patient",
+        createdAt: "2026-11-17T10:00:00.000Z",
+        type: "Pending Medical Report",
+      },
+    ]);
   });
 
-  const result = await dashboardService.getVisitors();
+  it("should handle missing patient information in operational alerts", async () => {
+    queryResults = [
+      { data: [], error: null },
+      { data: [], error: null },
+      {
+        data: [
+          {
+            id: "record-2",
+            title: "Medical Report",
+            created_at: "2026-11-17T10:00:00.000Z",
+            patients: null,
+          },
+        ],
+        error: null,
+      },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboardvisitors");
+    const result = await dashboardService.getOperationsInsights();
 
-  expect(result).toEqual(visitors);
-});
-
-it("should get demographics", async () => {
-  const demographics = [
-    {
-      country: "USA",
-      users: 100,
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: demographics,
-    error: null,
+    expect(result.operationalAlerts[0].patientName).toBe("Unknown Patient");
   });
 
-  const result = await dashboardService.getDemographics();
+  it("should throw when operations insights query fails", async () => {
+    queryResults = [
+      {
+        data: null,
+        error: new Error("Insights error"),
+      },
+      { data: [], error: null },
+      { data: [], error: null },
+    ];
 
-  expect(mockFrom).toHaveBeenCalledWith("dashboarddemographics");
-
-  expect(result).toEqual(demographics);
-});
-
-it("should get recent orders", async () => {
-  const orders = [
-    {
-      id: 1,
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: orders,
-    error: null,
+    await expect(dashboardService.getOperationsInsights()).rejects.toThrow(
+      "Insights error",
+    );
   });
-
-  const result = await dashboardService.getRecentOrders();
-
-  expect(mockFrom).toHaveBeenCalledWith("recentorders");
-
-  expect(result).toEqual(orders);
-});
-
-it("should get top products", async () => {
-  const products = [
-    {
-      id: 1,
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: products,
-    error: null,
-  });
-
-  const result = await dashboardService.getTopProducts();
-
-  expect(mockFrom).toHaveBeenCalledWith("topproducts");
-
-  expect(result).toEqual(products);
-});
-
-it("should get latest users", async () => {
-  const users = [
-    {
-      id: "1",
-      full_name: "Amir",
-    },
-  ];
-
-  mockSelect.mockResolvedValue({
-    data: users,
-    error: null,
-  });
-
-  const result = await dashboardService.getLatestUsers();
-
-  expect(mockFrom).toHaveBeenCalledWith("profiles");
-
-  expect(result).toEqual(users);
-});
-
-it("should throw when getStats fails", async () => {
-  const error = new Error("Database error");
-
-  mockSelect.mockReturnValue({
-    single: mockSingle,
-  });
-
-  mockSingle.mockResolvedValue({
-    data: null,
-    error,
-  });
-
-  await expect(
-    dashboardService.getStats(),
-  ).rejects.toThrow("Database error");
-});
-
-it("should throw when getSales fails", async () => {
-  const error = new Error("Database error");
-
-  mockSelect.mockResolvedValue({
-    data: null,
-    error,
-  });
-
-  await expect(
-    dashboardService.getSales(),
-  ).rejects.toThrow("Database error");
 });
