@@ -58,7 +58,7 @@ function ConversationHistory({
 
   return (
     <>
-      <aside className="flex h-full w-full flex-col rounded-2xl border border-slate-200/80 bg-white dark:border-slate-700/80 dark:bg-slate-900">
+      <aside className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white dark:border-slate-700/80 dark:bg-slate-900">
         <div className="flex items-center justify-between border-b border-slate-200/80 p-4 dark:border-slate-700/80">
           <div>
             <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -76,7 +76,7 @@ function ConversationHistory({
           </button>
         </div>
 
-        <div className="flex-1 space-y-1 overflow-y-auto p-2">
+        <div className="min-w-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto p-2">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" />
