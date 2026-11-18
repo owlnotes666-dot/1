@@ -20,6 +20,7 @@ python-docx = "*"
 openpyxl = "*"
 python-pptx = "*"
 python-multipart = "*"
+langchain-text-splitters = "*"
 
 [dev-packages]
 pytest = "*"
